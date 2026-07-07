@@ -26,3 +26,4 @@ server after editing.
 1. Push this repo to GitHub and import it into the same host as the main portfolio.
 2. Add `studio.mahanghafarian.com` as the project's custom domain.
 3. Add the CNAME record the host gives you at the DNS provider for `mahanghafarian.com`.
+# studio
