@@ -122,9 +122,63 @@ body {
   animation-play-state: running;
 }
 
+/* Horizontal film feed — sprocket holes crawl sideways while a category
+   strip is rolled out, as if the canister keeps feeding film.
+   --sprocket-step-x must equal one hole width + gap for a seamless loop. */
+@keyframes film-transport-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-1 * var(--sprocket-step-x, 1.25rem))); }
+}
+
+.film-transport-x {
+  animation: film-transport-x 0.45s linear infinite;
+  animation-play-state: paused;
+}
+
+.group:hover .film-transport-x {
+  animation-play-state: running;
+}
+
+/* Film shelf — rows of three rolls. Hovering a roll grows its grid column
+   and compresses the neighbours, so the push is real but the row always sums
+   to the container width: nothing can overflow or re-wrap mid-animation.
+   Below lg the rows stack and each strip rolls out into its own full row. */
+.film-shelf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .film-shelf-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 1.5rem;
+    transition: grid-template-columns 650ms cubic-bezier(0.33, 1, 0.4, 1);
+  }
+
+  .film-shelf-row:has(> :nth-child(1):is(:hover, :focus-within)) {
+    grid-template-columns: 2.6fr 1fr 1fr;
+  }
+
+  .film-shelf-row:has(> :nth-child(2):is(:hover, :focus-within)) {
+    grid-template-columns: 1fr 2.6fr 1fr;
+  }
+
+  .film-shelf-row:has(> :nth-child(3):is(:hover, :focus-within)) {
+    grid-template-columns: 1fr 1fr 2.6fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .film-shelf-row {
+    transition: none;
+  }
+
   .light-leak,
   .film-transport,
+  .film-transport-x,
   .animate-float,
   .animate-float-subtle,
   .animate-glow-pulse {
