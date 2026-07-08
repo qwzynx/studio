@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
@@ -33,6 +33,7 @@ function PolaroidFrame({
   sizes: string;
 }) {
   const ratio = photo.width / photo.height;
+  const reduceMotion = useReducedMotion();
 
   return (
     <motion.figure
@@ -44,7 +45,16 @@ function PolaroidFrame({
       className="group cursor-zoom-in shadow-[0_12px_35px_rgba(0,0,0,0.45)] hover:shadow-[0_18px_50px_rgba(0,0,0,0.65)] hover:-translate-y-1 transition-all duration-500"
       style={height ? { width: `calc(${height} * ${ratio})` } : undefined}
     >
-      <div
+      {/* The print develops as it scrolls into view: washed-out and soft → sharp, full color */}
+      <motion.div
+        initial={
+          reduceMotion
+            ? false
+            : { filter: "sepia(0.45) brightness(1.35) contrast(0.75) saturate(0.35) blur(5px)" }
+        }
+        whileInView={{ filter: "sepia(0) brightness(1) contrast(1) saturate(1) blur(0px)" }}
+        viewport={{ once: true, margin: "0px 0px -8% 0px" }}
+        transition={{ duration: 1.4, ease: "easeOut" }}
         className="relative overflow-hidden bg-neutral-900"
         style={{ aspectRatio: `${photo.width} / ${photo.height}`, height }}
       >
@@ -55,7 +65,7 @@ function PolaroidFrame({
           sizes={sizes}
           className="object-cover group-hover:scale-[1.04] transition-transform duration-700"
         />
-      </div>
+      </motion.div>
       <figcaption className="bg-white px-3 py-2">
         <p className="text-neutral-900 text-[11px] md:text-xs font-semibold tracking-wide truncate">
           {photo.title}
@@ -67,14 +77,16 @@ function PolaroidFrame({
 
 export default function CollectionGallery({ collection }: { collection: Collection }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
 
-  let cursor = 0;
-  const stairRows = STAIR_ROWS.map((row) => {
-    const start = cursor;
-    cursor += row.count;
+  const stairStarts = STAIR_ROWS.map((_, i) =>
+    STAIR_ROWS.slice(0, i).reduce((sum, r) => sum + r.count, 0)
+  );
+  const stairRows = STAIR_ROWS.map((row, i) => {
+    const start = stairStarts[i];
     return { ...row, start, photos: collection.photos.slice(start, start + row.count) };
   });
-  const stairTotal = cursor;
+  const stairTotal = STAIR_ROWS.reduce((sum, r) => sum + r.count, 0);
   const listPhotos = collection.photos.slice(stairTotal);
 
   const close = useCallback(() => setLightboxIndex(null), []);
@@ -210,11 +222,12 @@ export default function CollectionGallery({ collection }: { collection: Collecti
               <ChevronRight size={36} />
             </button>
 
+            {/* Each frame opens like an aperture iris */}
             <motion.div
               key={selected.src}
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35 }}
+              initial={reduceMotion ? { opacity: 0 } : { clipPath: "circle(0% at 50% 50%)", opacity: 0.6 }}
+              animate={{ clipPath: "circle(100% at 50% 50%)", opacity: 1 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               className="relative flex-1 m-6 md:m-12 mb-0"
               onClick={(e) => e.stopPropagation()}
             >
@@ -224,7 +237,7 @@ export default function CollectionGallery({ collection }: { collection: Collecti
                 fill
                 sizes="100vw"
                 className="object-contain"
-                priority
+                preload
               />
             </motion.div>
 

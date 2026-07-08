@@ -53,7 +53,13 @@ export default function Kit({ hideTitle = false }: { hideTitle?: boolean }) {
                 transition={{ duration: 0.5, delay: index * 0.06 }}
                 className="group rounded-2xl bg-white/[0.02] border border-white/10 hover:border-amber-400/40 p-4 md:p-5 flex flex-col gap-3 transition-colors duration-500"
               >
-                <item.icon size={22} className="text-gray-400 group-hover:text-amber-400 transition-colors duration-300" />
+                {/* Aperture icons rotate like blades stopping down */}
+                <item.icon
+                  size={22}
+                  className={`text-gray-400 group-hover:text-amber-400 transition-all duration-500 ${
+                    item.icon === Aperture ? "group-hover:rotate-[120deg]" : ""
+                  }`}
+                />
                 <div>
                   <p className="text-white text-sm md:text-base font-bold tracking-tight">{item.name}</p>
                   <p className="text-gray-500 text-[11px] md:text-xs font-mono mt-0.5">{item.spec}</p>
