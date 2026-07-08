@@ -2,16 +2,17 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { Camera, Aperture, Video, Sun, Mic } from "lucide-react";
+import { Camera, Aperture, Video } from "lucide-react";
 
 // Edit these to match the real bag. `spec` reads like the label on the gear itself.
 const gear = [
-  { name: "Sony A7 III", spec: "Full-frame · 24MP", icon: Camera },
-  { name: "35mm f/1.8", spec: "Street & everyday", icon: Aperture },
-  { name: "85mm f/1.8", spec: "Portraits", icon: Aperture },
-  { name: "DJI Gimbal", spec: "Stabilized movement", icon: Video },
-  { name: "Key Light", spec: "Studio lighting", icon: Sun },
-  { name: "Shotgun Mic", spec: "On-camera audio", icon: Mic },
+  { name: "Canon EOS R10", spec: "APS-C · 24MP", icon: Camera },
+  { name: "EF 18-55mm f/3.5-5.6", spec: "Everyday zoom", icon: Aperture },
+  { name: "EF 50mm f/1.8", spec: "Portraits & low light", icon: Aperture },
+  { name: "EF 75-300mm f/4-5.6", spec: "Telephoto reach", icon: Aperture },
+  { name: "RF 18-45mm f/4.5-6.3", spec: "Compact walkaround", icon: Aperture },
+  { name: "DJI RS 3 Mini", spec: "Stabilized movement", icon: Video },
+  { name: "DJI Osmo Action 4", spec: "Action cam · 4K", icon: Camera },
 ];
 
 // Post-production tools rendered as app tiles — no brand icon dependencies.
