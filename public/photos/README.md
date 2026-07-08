@@ -1,10 +1,12 @@
 # Photos
 
-Drop gallery images here (e.g. `harbor.jpg`), then set the matching `image` field
-in `app/components/photos.tsx` to `"/photos/harbor.jpg"`.
+Gallery images live here. `temp/` holds placeholder gradients — replace them with
+real exports (e.g. `portrait/golden-hour.jpg`), then update the matching entry in
+`app/lib/collections.ts` (`src`, `width`, `height`, `title`, `description`).
 
 Tips:
 - Export at ~2000px on the long edge, JPEG quality ~80 — `next/image` handles the rest.
-- Match the `aspect` field ("portrait" 3:4, "square" 1:1, "wide" 16:9) to the crop
-  you export, since the tile crops with `object-cover`.
-- Update the `exif` fields; they show in the hover caption.
+- `width`/`height` must match the actual file: the gallery frames take the shape of
+  each picture's ratio, so wrong values will stretch or crop it.
+- `title` shows on the white strip under each frame; `description` shows in the
+  fullscreen viewer.

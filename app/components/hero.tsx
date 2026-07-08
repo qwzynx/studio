@@ -161,22 +161,22 @@ export default function Hero() {
           whileInView={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
           viewport={{ once: true, margin: "0px 0px -20% 0px" }}
           transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-          className="flex-1 w-full max-w-xl justify-center items-center z-10 hidden sm:flex"
+          className="flex-1 w-full max-w-xs justify-center items-center z-10 hidden sm:flex"
         >
           <div className="relative group w-full animate-float-subtle">
             {/* Warm glow behind */}
             <div className="absolute -inset-4 rounded-3xl bg-linear-to-tr from-amber-600 to-red-600 opacity-15 blur-3xl group-hover:opacity-30 transition-opacity duration-700"></div>
 
             {/* Monitor frame */}
-            <div className="relative w-full aspect-video rounded-xl p-[2px] bg-linear-to-bl from-amber-400/60 via-white/10 to-red-500/40 shadow-[0_0_40px_rgba(245,158,11,0.15)] group-hover:shadow-[0_0_60px_rgba(245,158,11,0.3)] transition-all duration-700">
+            <div className="relative w-full aspect-[3/4] rounded-xl p-[2px] bg-linear-to-bl from-amber-400/60 via-white/10 to-red-500/40 shadow-[0_0_40px_rgba(245,158,11,0.15)] group-hover:shadow-[0_0_60px_rgba(245,158,11,0.3)] transition-all duration-700">
               <div className="w-full h-full rounded-[10px] bg-[#080807] overflow-hidden relative">
                 <Image
                   src="/portrait.jpg"
                   alt="Mahan Ghafarian"
                   fill
                   preload
-                  sizes="(max-width: 1024px) 90vw, 576px"
-                  className="object-cover object-[center_30%] opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-700"
+                  sizes="(max-width: 1024px) 60vw, 400px"
+                  className="object-cover object-top opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-700"
                 />
                 {/* Rule-of-thirds grid, revealed on hover */}
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none">
@@ -186,7 +186,7 @@ export default function Hero() {
                   <div className="absolute top-2/3 left-0 right-0 h-px bg-white/25" />
                 </div>
                 {/* Focus box */}
-                <div className="absolute left-1/2 top-[30%] -translate-x-1/2 -translate-y-1/2 w-16 h-16 border border-amber-400/0 group-hover:border-amber-400/80 rounded-sm transition-all duration-500 pointer-events-none" />
+                <div className="absolute left-[52%] top-[23.5%] -translate-x-1/2 -translate-y-1/2 w-16 h-16 border border-amber-400/0 group-hover:border-amber-400/80 rounded-sm transition-all duration-500 pointer-events-none" />
               </div>
             </div>
           </div>
