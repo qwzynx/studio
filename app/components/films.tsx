@@ -44,13 +44,17 @@ const films = [
   },
 ];
 
-/* Sprocket hole strip that makes each row read as physical film */
+/* Sprocket hole strip that makes each row read as physical film.
+   On hover the holes roll upward like film running through a projector —
+   .film-transport shifts by exactly one hole+gap (--sprocket-step) per loop. */
 function Sprockets() {
   return (
-    <div className="flex flex-col justify-between h-full py-1 shrink-0">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="w-2.5 h-3 md:w-3 md:h-4 rounded-[3px] bg-background border border-white/15" />
-      ))}
+    <div className="relative overflow-hidden shrink-0 w-2.5 md:w-3 my-1 [--sprocket-step:1.5rem] md:[--sprocket-step:1.75rem]">
+      <div className="film-transport absolute inset-x-0 top-0 flex flex-col gap-3">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div key={i} className="w-2.5 h-3 md:w-3 md:h-4 rounded-[3px] bg-background border border-white/15 shrink-0" />
+        ))}
+      </div>
     </div>
   );
 }

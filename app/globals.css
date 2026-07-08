@@ -92,6 +92,46 @@ body {
   animation: rec-blink 1.6s steps(1) infinite;
 }
 
+/* Warm light leak that sweeps across a photo tile once per hover */
+@keyframes light-leak {
+  from { transform: translateX(-160%) skewX(-15deg); }
+  to { transform: translateX(340%) skewX(-15deg); }
+}
+
+.light-leak {
+  transform: translateX(-160%) skewX(-15deg);
+}
+
+.group:hover .light-leak {
+  animation: light-leak 1.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sprocket strip rolls like film through a projector; plays while the card is hovered.
+   --sprocket-step must equal one hole height + gap so the loop is seamless. */
+@keyframes film-transport {
+  from { transform: translateY(0); }
+  to { transform: translateY(calc(-1 * var(--sprocket-step, 1.5rem))); }
+}
+
+.film-transport {
+  animation: film-transport 0.4s linear infinite;
+  animation-play-state: paused;
+}
+
+.group:hover .film-transport {
+  animation-play-state: running;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .light-leak,
+  .film-transport,
+  .animate-float,
+  .animate-float-subtle,
+  .animate-glow-pulse {
+    animation: none;
+  }
+}
+
 .writing-v-rl {
   writing-mode: vertical-rl;
   transform: rotate(180deg);
