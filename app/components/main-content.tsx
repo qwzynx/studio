@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Photos from "./photos";
 import Films from "./films";
 import Kit from "./kit";
+import Experience from "./experience";
 import Contact from "./contact";
 import FocusText from "./focus-text";
 
@@ -12,6 +13,7 @@ const SECTIONS = [
   { id: "photos", title: "PHOTOS", subtitle: "Stills worth a thousand frames" },
   { id: "films", title: "FILMS", subtitle: "Moving pictures, moving people" },
   { id: "kit", title: "KIT", subtitle: "What's in the bag" },
+  { id: "experience", title: "EXPERIENCE", subtitle: "The reel so far" },
   { id: "contact", title: "CONTACT", subtitle: "Book a shoot" },
 ];
 
@@ -115,6 +117,9 @@ export default function MainContent() {
           </div>
           <div className="pt-4 sm:pt-6 md:pt-8">
             <Kit hideTitle />
+          </div>
+          <div className="pt-4 sm:pt-6 md:pt-8">
+            <Experience hideTitle />
           </div>
           <div className="-mt-12 sm:-mt-16 md:-mt-20">
             <Contact hideTitle />
