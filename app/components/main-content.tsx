@@ -3,14 +3,14 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Photos from "./photos";
-import Films from "./films";
+import Videos from "./videos";
 import Kit from "./kit";
 import Contact from "./contact";
 import FocusText from "./focus-text";
 
 const SECTIONS = [
   { id: "photos", title: "PHOTOS", subtitle: "Stills worth a thousand frames" },
-  { id: "films", title: "FILMS", subtitle: "Moving pictures, moving people" },
+  { id: "videos", title: "VIDEOS", subtitle: "Moving pictures, moving people" },
   { id: "kit", title: "KIT", subtitle: "What's in the bag" },
   { id: "contact", title: "CONTACT", subtitle: "Book a shoot" },
 ];
@@ -111,7 +111,7 @@ export default function MainContent() {
         <div className="flex flex-col gap-20 sm:gap-28 md:gap-36">
           <Photos hideTitle />
           <div className="pt-4 sm:pt-6 md:pt-8">
-            <Films hideTitle />
+            <Videos hideTitle />
           </div>
           <div className="pt-4 sm:pt-6 md:pt-8">
             <Kit hideTitle />

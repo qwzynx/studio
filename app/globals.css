@@ -139,6 +139,29 @@ body {
   animation-play-state: running;
 }
 
+/* Playback scrub bar on video cards — fills across the frame while the card
+   is hovered, like a preview scrubbing through the clip. */
+.scrub-fill {
+  width: 0;
+  transition: width 0.3s ease-out;
+}
+
+.group:hover .scrub-fill {
+  width: 100%;
+  transition: width 6s linear;
+}
+
+/* Faint CRT scanlines laid over a video frame on hover */
+.scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
 /* Film shelf — rows of three rolls. Hovering a roll grows its grid column
    and compresses the neighbours, so the push is real but the row always sums
    to the container width: nothing can overflow or re-wrap mid-animation.
@@ -181,8 +204,14 @@ body {
   .film-transport-x,
   .animate-float,
   .animate-float-subtle,
-  .animate-glow-pulse {
+  .animate-glow-pulse,
+  .animate-rec-blink {
     animation: none;
+  }
+
+  .scrub-fill,
+  .group:hover .scrub-fill {
+    transition: none;
   }
 }
 
