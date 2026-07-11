@@ -59,12 +59,12 @@ export default function Navbar() {
             <span className="hidden md:inline">Photos</span>
           </a>
           <a
-            href="#films"
+            href="#videos"
             className="hover:text-white transition-colors duration-300 tracking-widest text-xs md:text-sm font-medium uppercase md:capitalize writing-v-rl"
-            title="Films"
+            title="Videos"
           >
             <span className="md:hidden"><Clapperboard size={20} /></span>
-            <span className="hidden md:inline">Films</span>
+            <span className="hidden md:inline">Videos</span>
           </a>
           <a
             href="#kit"

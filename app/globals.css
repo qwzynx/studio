@@ -138,14 +138,76 @@ body {
 .group:hover .film-transport-x {
   animation-play-state: running;
 }
+
+/* Playback scrub bar on video cards — fills across the frame while the card
+   is hovered, like a preview scrubbing through the clip. */
+.scrub-fill {
+  width: 0;
+  transition: width 0.3s ease-out;
+}
+
+.group:hover .scrub-fill {
+  width: 100%;
+  transition: width 6s linear;
+}
+
+/* Faint CRT scanlines laid over a video frame on hover */
+.scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+/* Film shelf — rows of three rolls. Hovering a roll grows its grid column
+   and compresses the neighbours, so the push is real but the row always sums
+   to the container width: nothing can overflow or re-wrap mid-animation.
+   Below lg the rows stack and each strip rolls out into its own full row. */
+.film-shelf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (min-width: 1024px) {
+  .film-shelf-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 1.5rem;
+    transition: grid-template-columns 650ms cubic-bezier(0.33, 1, 0.4, 1);
+  }
+
+  .film-shelf-row:has(> :nth-child(1):is(:hover, :focus-within)) {
+    grid-template-columns: 2.6fr 1fr 1fr;
+  }
+
+  .film-shelf-row:has(> :nth-child(2):is(:hover, :focus-within)) {
+    grid-template-columns: 1fr 2.6fr 1fr;
+  }
+
+  .film-shelf-row:has(> :nth-child(3):is(:hover, :focus-within)) {
+    grid-template-columns: 1fr 1fr 2.6fr;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .light-leak,
   .film-transport,
   .film-transport-x,
   .animate-float,
   .animate-float-subtle,
-  .animate-glow-pulse {
+  .animate-glow-pulse,
+  .animate-rec-blink {
     animation: none;
+  }
+
+  .scrub-fill,
+  .group:hover .scrub-fill {
+    transition: none;
   }
 }
 
