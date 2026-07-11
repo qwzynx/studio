@@ -1,7 +1,7 @@
 "use client";
 
 import { FaGithub, FaLinkedin, FaInstagram, FaEnvelope } from "react-icons/fa";
-import { Camera, Clapperboard, Aperture } from "lucide-react";
+import { Camera, Clapperboard, Aperture, Briefcase } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Navbar() {
@@ -73,6 +73,14 @@ export default function Navbar() {
           >
             <span className="md:hidden"><Aperture size={20} /></span>
             <span className="hidden md:inline">Kit</span>
+          </a>
+          <a
+            href="#experience"
+            className="hover:text-white transition-colors duration-300 tracking-widest text-xs md:text-sm font-medium uppercase md:capitalize writing-v-rl"
+            title="Experience"
+          >
+            <span className="md:hidden"><Briefcase size={20} /></span>
+            <span className="hidden md:inline">Experience</span>
           </a>
           <a
             href="#contact"
