@@ -23,7 +23,11 @@ export default function MainContent() {
   const [hasShownHeader, setHasShownHeader] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
+    let ticking = false;
+
+    const updateFromScroll = () => {
+      ticking = false;
+
       // Find which section is currently most centered in the viewport
       const viewportCenter = window.innerHeight / 2;
 
@@ -45,9 +49,7 @@ export default function MainContent() {
         }
       });
 
-      if (currentActive.id !== activeSection.id) {
-        setActiveSection(currentActive);
-      }
+      setActiveSection((prev) => (prev.id !== currentActive.id ? currentActive : prev));
 
       // Check if header should be visible (appears sooner, when photos section is approaching the top)
       const photosElement = document.getElementById("photos");
@@ -56,17 +58,23 @@ export default function MainContent() {
         // Trigger earlier (when top of photos is 400px from top)
         const visible = rect.top <= 400;
         setIsHeaderVisible(visible);
-        if (visible && !hasShownHeader) {
+        if (visible) {
           setHasShownHeader(true);
         }
       }
     };
 
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateFromScroll);
+    };
+
     window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll(); // Initial check
+    updateFromScroll(); // Initial check
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [activeSection.id, hasShownHeader]);
+  }, []);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 md:px-16 relative">

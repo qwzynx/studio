@@ -13,7 +13,10 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    const handleScroll = () => {
+    let ticking = false;
+
+    const updateProgress = () => {
+      ticking = false;
       const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
       if (scrollHeight > 0) {
         const scrolled = window.scrollY;
@@ -22,8 +25,14 @@ export default function Navbar() {
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Check initially
+    const handleScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateProgress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    updateProgress(); // Check initially
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);

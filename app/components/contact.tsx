@@ -123,11 +123,14 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Name */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold px-1">
+                  <label htmlFor="contact-name" className="block text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold px-1">
                     Name
                   </label>
                   <input
+                    id="contact-name"
+                    name="name"
                     type="text"
+                    autoComplete="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Name"
@@ -138,11 +141,15 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
 
                 {/* Email */}
                 <div className="space-y-1.5">
-                  <label className="block text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold px-1">
+                  <label htmlFor="contact-email" className="block text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold px-1">
                     Email
                   </label>
                   <input
+                    id="contact-email"
+                    name="email"
                     type="email"
+                    inputMode="email"
+                    autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email"
@@ -154,10 +161,12 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
 
               {/* Message */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold px-1">
+                <label htmlFor="contact-message" className="block text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold px-1">
                   What are we shooting?
                 </label>
                 <textarea
+                  id="contact-message"
+                  name="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Tell me about your project, date, and location..."

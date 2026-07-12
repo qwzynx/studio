@@ -18,6 +18,7 @@ export const viewport: Viewport = {
   themeColor: "#080807",
   width: "device-width",
   initialScale: 1,
+  colorScheme: "dark",
 };
 
 export const metadata: Metadata = {
@@ -38,6 +39,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Mahan Ghafarian" }],
   creator: "Mahan Ghafarian",
+  formatDetection: {
+    telephone: false,
+    address: false,
+    email: false,
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
@@ -48,7 +54,7 @@ export const metadata: Metadata = {
     siteName: "Mahan Ghafarian Studio",
     images: [
       {
-        url: "/portrait.jpg",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Mahan Ghafarian Studio",
@@ -60,7 +66,7 @@ export const metadata: Metadata = {
     title: "Mahan Ghafarian Studio | Photography & Videography",
     description:
       "Photography and videography portfolio of Mahan Ghafarian. Portraits, landscapes, street photography, and short films.",
-    images: ["/portrait.jpg"],
+    images: ["/og-image.jpg"],
     creator: "@qwzynx",
   },
   robots: {
