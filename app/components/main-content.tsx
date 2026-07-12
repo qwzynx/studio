@@ -13,7 +13,7 @@ const SECTIONS = [
   { id: "photos", title: "PHOTOS", subtitle: "Stills worth a thousand frames" },
   { id: "videos", title: "VIDEOS", subtitle: "Moving pictures, moving people" },
   { id: "kit", title: "KIT", subtitle: "What's in the bag" },
-  { id: "experience", title: "EXPERIENCE", subtitle: "The reel so far" },
+  { id: "experience", title: "EXPERIENCE", subtitle: "The filmography so far" },
   { id: "contact", title: "CONTACT", subtitle: "Book a shoot" },
 ];
 
