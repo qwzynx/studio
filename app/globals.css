@@ -32,17 +32,25 @@ html {
 
 body {
   background-color: var(--background);
-  /* Warm tungsten glow instead of the dev portfolio's blue/purple */
-  background-image:
-    radial-gradient(ellipse at top center, rgba(245, 158, 11, 0.10), transparent 70%),
-    radial-gradient(ellipse at bottom right, rgba(220, 38, 38, 0.08), transparent 80%);
-  background-size: 100% 100%, 100% 100%;
-  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-inter), sans-serif;
   font-weight: 400;
   overflow-x: hidden;
   width: 100%;
+}
+
+/* Warm tungsten glow instead of the dev portfolio's blue/purple.
+   Lives on its own fixed layer rather than background-attachment: fixed,
+   which iOS Safari ignores and other mobile browsers repaint on scroll. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse at top center, rgba(245, 158, 11, 0.10), transparent 70%),
+    radial-gradient(ellipse at bottom right, rgba(220, 38, 38, 0.08), transparent 80%);
 }
 
 /* Film grain overlay — sits above the background, below the content */
@@ -167,6 +175,10 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   .light-leak,
   .film-transport-x,
   .animate-float,

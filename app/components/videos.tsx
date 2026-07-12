@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import React, { useRef, useState } from "react";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { Play, ArrowUpRight } from "lucide-react";
 
@@ -86,6 +86,11 @@ function AudioWave({ clip }: { clip: number }) {
 export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
   const [selected, setSelected] = useState(0);
   const reduce = useReducedMotion();
+  // The playhead loop is infinite — park it while the timeline is off-screen
+  // so it doesn't keep the main thread busy for the whole session.
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const timelineInView = useInView(timelineRef, { amount: 0.2 });
+  const playheadParked = reduce || !timelineInView;
   const video = videos[selected];
 
   const startPct = (clipStarts[selected] / totalSeconds) * 100;
@@ -97,18 +102,23 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
 
   return (
     <section id="videos" className="w-full flex flex-col items-start z-10 relative">
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className={`flex flex-col items-start mb-10 ${hideTitle ? "hidden" : ""}`}
-      >
-        <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white">
-          VIDEOS
-        </h2>
-        <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">Moving pictures, moving people</p>
-      </motion.div>
+      {/* Keep a crawlable heading when the floating pill owns the visual title */}
+      {hideTitle ? (
+        <h2 className="sr-only">Videos — moving pictures, moving people</h2>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="flex flex-col items-start mb-10"
+        >
+          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white">
+            VIDEOS
+          </h2>
+          <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">Moving pictures, moving people</p>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -261,7 +271,7 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
         </div>
 
         {/* Timeline */}
-        <div className="border-t border-white/10 bg-black/50 px-3 pb-4 pt-3 md:px-4">
+        <div ref={timelineRef} className="border-t border-white/10 bg-black/50 px-3 pb-4 pt-3 md:px-4">
           <div className="flex">
             {/* Track heads */}
             <div className="flex w-9 md:w-11 shrink-0 flex-col pr-2 text-right font-mono text-[9px] md:text-[10px] font-bold text-gray-600">
@@ -350,12 +360,12 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
                 key={selected}
                 initial={{ left: `${startPct}%` }}
                 animate={
-                  reduce
+                  playheadParked
                     ? { left: `${startPct}%` }
                     : { left: [`${startPct}%`, `${endPct}%`] }
                 }
                 transition={
-                  reduce
+                  playheadParked
                     ? { duration: 0 }
                     : { duration: seconds[selected] / 20, ease: "linear", repeat: Infinity }
                 }

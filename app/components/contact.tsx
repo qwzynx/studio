@@ -56,19 +56,23 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-linear-to-tr from-amber-600/5 to-red-600/5 blur-[80px] sm:blur-[120px] rounded-full pointer-events-none animate-glow-pulse" />
 
-      {/* Section heading */}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className={`flex flex-col items-start w-full mb-6 sm:mb-10 ${hideTitle ? "hidden" : ""}`}
-      >
-        <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white uppercase">
-          Contact
-        </h2>
-        <p className="text-amber-400 mt-2 sm:mt-4 text-[10px] sm:text-sm md:text-base uppercase tracking-[0.2em] sm:tracking-[0.3em] font-bold text-left">Book a shoot</p>
-      </motion.div>
+      {/* Section heading — kept crawlable when the floating pill owns the visual title */}
+      {hideTitle ? (
+        <h2 className="sr-only">Contact — book a shoot</h2>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="flex flex-col items-start w-full mb-6 sm:mb-10"
+        >
+          <h2 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white uppercase">
+            Contact
+          </h2>
+          <p className="text-amber-400 mt-2 sm:mt-4 text-[10px] sm:text-sm md:text-base uppercase tracking-[0.2em] sm:tracking-[0.3em] font-bold text-left">Book a shoot</p>
+        </motion.div>
+      )}
 
       <div className="w-full flex flex-col lg:flex-row gap-6 sm:gap-12 lg:gap-20 items-center lg:items-stretch relative z-10">
         {/* ─── LEFT SIDE ─── */}

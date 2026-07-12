@@ -450,18 +450,25 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
 
   return (
     <section id="photos" className="w-full flex flex-col items-start z-10 relative">
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className={`flex flex-col items-start mb-10 ${hideTitle ? "hidden" : ""}`}
-      >
-        <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white">
-          PHOTOS
-        </h2>
-        <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">Stills worth a thousand frames</p>
-      </motion.div>
+      {/* When the floating pill carries the visual title, keep a real heading
+          in the document for crawlers and screen readers — display:none drops
+          it from the outline entirely */}
+      {hideTitle ? (
+        <h2 className="sr-only">Photos — stills worth a thousand frames</h2>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="flex flex-col items-start mb-10"
+        >
+          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white">
+            PHOTOS
+          </h2>
+          <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">Stills worth a thousand frames</p>
+        </motion.div>
+      )}
 
       <div
         ref={shelfRef}

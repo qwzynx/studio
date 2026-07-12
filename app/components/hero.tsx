@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
+import { motion, useInView } from "framer-motion";
 import Image from "next/image";
 import { ChevronDown } from "lucide-react";
 
-function Typewriter({ words }: { words: string[] }) {
+function Typewriter({ words, running }: { words: string[]; running: boolean }) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
+    if (!running) return;
     const word = words[currentWordIndex];
 
     const timeout = setTimeout(() => {
@@ -29,7 +30,7 @@ function Typewriter({ words }: { words: string[] }) {
     }, isDeleting ? 40 : 100);
 
     return () => clearTimeout(timeout);
-  }, [currentText, isDeleting, currentWordIndex, words]);
+  }, [currentText, isDeleting, currentWordIndex, words, running]);
 
   return (
     <span className="text-amber-400 inline-block min-w-[120px] sm:min-w-[200px]">
@@ -39,14 +40,17 @@ function Typewriter({ words }: { words: string[] }) {
   );
 }
 
-/* Running 24fps timecode, like a camera that started rolling when the page loaded */
-function Timecode() {
+/* Running 24fps timecode, like a camera that started rolling when the page
+   loaded. Pauses while the hero is scrolled out of view — a 24Hz interval is
+   pointless main-thread churn once the HUD can't be seen. */
+function Timecode({ running }: { running: boolean }) {
   const [frames, setFrames] = useState(0);
 
   useEffect(() => {
+    if (!running) return;
     const interval = setInterval(() => setFrames((f) => f + 1), 1000 / 24);
     return () => clearInterval(interval);
-  }, []);
+  }, [running]);
 
   const ff = frames % 24;
   const totalSeconds = Math.floor(frames / 24);
@@ -72,6 +76,9 @@ function ViewfinderCorner({ position }: { position: string }) {
 }
 
 export default function Hero() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { amount: 0.05 });
+
   const scrollToBottom = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
@@ -79,6 +86,7 @@ export default function Hero() {
 
   return (
     <section
+      ref={sectionRef}
       id="home"
       className="relative w-full min-h-[95dvh] flex items-center justify-center px-6 md:px-12 py-16"
     >
@@ -93,7 +101,7 @@ export default function Hero() {
         <div className="absolute top-4 left-6 md:top-6 md:left-8 flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-rec-blink shadow-[0_0_10px_rgba(239,68,68,0.8)]" />
           <span className="text-red-400 font-bold tracking-[0.2em]">REC</span>
-          <span className="text-gray-300 ml-2"><Timecode /></span>
+          <span className="text-gray-300 ml-2"><Timecode running={inView} /></span>
         </div>
 
         {/* Top-right: exposure readout */}
@@ -130,7 +138,7 @@ export default function Hero() {
           </h1>
 
           <div className="text-xl md:text-3xl font-medium text-gray-300 mt-2 mb-6">
-            I&apos;m a <Typewriter words={["Photographer.", "Videographer.", "Visual Storyteller."]} />
+            I&apos;m a <Typewriter words={["Photographer.", "Videographer.", "Visual Storyteller."]} running={inView} />
           </div>
 
           <p className="text-gray-400 max-w-lg leading-relaxed text-base md:text-lg">
@@ -175,7 +183,7 @@ export default function Hero() {
                   alt="Mahan Ghafarian"
                   fill
                   preload
-                  sizes="(max-width: 1024px) 60vw, 400px"
+                  sizes="320px"
                   className="object-cover object-top opacity-90 group-hover:opacity-100 group-hover:scale-[1.03] transition-all duration-700"
                 />
                 {/* Rule-of-thirds grid, revealed on hover */}

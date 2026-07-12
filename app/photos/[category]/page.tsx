@@ -49,21 +49,42 @@ export default async function CollectionPage({ params }: Props) {
   const collection = getCollection(category);
   if (!collection) notFound();
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "ImageGallery",
-    name: collection.name,
-    description: collection.description,
-    url: `https://studio.mahanghafarian.com/photos/${collection.slug}`,
-    image: collection.photos.map((photo) => ({
-      "@type": "ImageObject",
-      contentUrl: `https://studio.mahanghafarian.com${photo.src}`,
-      name: photo.title,
-      description: photo.description,
-      width: photo.width,
-      height: photo.height,
-    })),
-  };
+  const url = `https://studio.mahanghafarian.com/photos/${collection.slug}`;
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "ImageGallery",
+      name: collection.name,
+      description: collection.description,
+      url,
+      image: collection.photos.map((photo) => ({
+        "@type": "ImageObject",
+        contentUrl: `https://studio.mahanghafarian.com${photo.src}`,
+        name: photo.title,
+        description: photo.description,
+        width: photo.width,
+        height: photo.height,
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Mahan Ghafarian Studio",
+          item: "https://studio.mahanghafarian.com",
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: collection.name,
+          item: url,
+        },
+      ],
+    },
+  ];
 
   return (
     <>

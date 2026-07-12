@@ -154,18 +154,23 @@ function VentPanel() {
 export default function Kit({ hideTitle = false }: { hideTitle?: boolean }) {
   return (
     <section id="kit" className="w-full flex flex-col items-start z-10 relative">
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        whileInView={{ opacity: 1, x: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-        className={`flex flex-col items-start mb-10 ${hideTitle ? "hidden" : ""}`}
-      >
-        <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white">
-          KIT
-        </h2>
-        <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">What&apos;s in the bag</p>
-      </motion.div>
+      {/* Keep a crawlable heading when the floating pill owns the visual title */}
+      {hideTitle ? (
+        <h2 className="sr-only">Kit — what&apos;s in the bag</h2>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+          className="flex flex-col items-start mb-10"
+        >
+          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter text-left leading-none text-transparent bg-clip-text bg-linear-to-t from-white/20 via-white/80 to-white">
+            KIT
+          </h2>
+          <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">What&apos;s in the bag</p>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 40 }}

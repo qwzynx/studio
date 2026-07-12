@@ -237,7 +237,7 @@ export default function CollectionGallery({ collection }: { collection: Collecti
                 fill
                 sizes="100vw"
                 className="object-contain"
-                preload
+                loading="eager"
               />
             </motion.div>
 

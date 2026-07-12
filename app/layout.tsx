@@ -95,22 +95,30 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Person",
-    name: "Mahan Ghafarian",
-    url: "https://studio.mahanghafarian.com",
-    image: "https://studio.mahanghafarian.com/portrait.jpg",
-    sameAs: [
-      "https://mahanghafarian.com",
-      "https://github.com/qwzynx",
-      "https://linkedin.com/in/mahan-ghafarian-b02ba0298/",
-      "https://www.instagram.com/qwzynx/",
-    ],
-    jobTitle: "Photographer & Videographer",
-    description:
-      "Photographer and videographer. Portraits, landscapes, street photography, and short films — shot, edited, and graded end to end.",
-  };
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      name: "Mahan Ghafarian",
+      url: "https://studio.mahanghafarian.com",
+      image: "https://studio.mahanghafarian.com/portrait.jpg",
+      sameAs: [
+        "https://mahanghafarian.com",
+        "https://github.com/qwzynx",
+        "https://linkedin.com/in/mahan-ghafarian-b02ba0298/",
+        "https://www.instagram.com/qwzynx/",
+      ],
+      jobTitle: "Photographer & Videographer",
+      description:
+        "Photographer and videographer. Portraits, landscapes, street photography, and short films — shot, edited, and graded end to end.",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      name: "Mahan Ghafarian Studio",
+      url: "https://studio.mahanghafarian.com",
+    },
+  ];
 
   return (
     <html
