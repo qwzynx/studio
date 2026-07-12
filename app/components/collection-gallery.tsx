@@ -18,16 +18,24 @@ const STAIR_ROWS = [
   { count: 2, height: "clamp(104px, 16vw, 225px)", offset: "18%" },
 ];
 
+// Slight scatter so the prints read as laid out by hand on a light table;
+// each frame straightens as you hover it. Pattern repeats every six frames.
+const TILTS = [-1.3, 0.9, -0.6, 1.4, -1.0, 0.7];
+
 // Borderless polaroid: the image at its native ratio with a white title strip
-// underneath. Pass `height` to size the frame by height (staircase) instead of
-// by container width (masonry).
+// underneath, plus contact-sheet details — a rebate frame number and a warm
+// light-leak sweep on hover, matching the shelf's preview frames. Pass
+// `height` to size the frame by height (staircase) instead of by container
+// width (masonry). `index` is the photo's position in the whole roll.
 function PolaroidFrame({
   photo,
+  index,
   onClick,
   height,
   sizes,
 }: {
   photo: CollectionPhoto;
+  index: number;
   onClick: () => void;
   height?: string;
   sizes: string;
@@ -42,35 +50,51 @@ function PolaroidFrame({
       viewport={{ once: true, margin: "0px 0px -8% 0px" }}
       transition={{ duration: 0.6 }}
       onClick={onClick}
-      className="group cursor-zoom-in shadow-[0_12px_35px_rgba(0,0,0,0.45)] hover:shadow-[0_18px_50px_rgba(0,0,0,0.65)] hover:-translate-y-1 transition-all duration-500"
+      className="group cursor-zoom-in"
       style={height ? { width: `calc(${height} * ${ratio})` } : undefined}
     >
-      {/* The print develops as it scrolls into view: washed-out and soft → sharp, full color */}
-      <motion.div
-        initial={
-          reduceMotion
-            ? false
-            : { filter: "sepia(0.45) brightness(1.35) contrast(0.75) saturate(0.35) blur(5px)" }
-        }
-        whileInView={{ filter: "sepia(0) brightness(1) contrast(1) saturate(1) blur(0px)" }}
-        viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-        transition={{ duration: 1.4, ease: "easeOut" }}
-        className="relative overflow-hidden bg-neutral-900"
-        style={{ aspectRatio: `${photo.width} / ${photo.height}`, height }}
+      {/* Tilt/lift live on this wrapper, not the motion.figure — framer owns
+          that element's `transform`, while the native rotate/translate
+          properties here compose with it instead of fighting it. */}
+      <div
+        className="rotate-(--tilt) shadow-[0_12px_35px_rgba(0,0,0,0.45)] transition-all duration-500 group-hover:rotate-0 group-hover:-translate-y-1 group-hover:shadow-[0_18px_50px_rgba(0,0,0,0.65)]"
+        style={{ "--tilt": `${TILTS[index % TILTS.length]}deg` } as React.CSSProperties}
       >
-        <Image
-          src={photo.src}
-          alt={photo.title}
-          fill
-          sizes={sizes}
-          className="object-cover group-hover:scale-[1.04] transition-transform duration-700"
-        />
-      </motion.div>
-      <figcaption className="bg-white px-3 py-2">
-        <p className="text-neutral-900 text-[11px] md:text-xs font-semibold tracking-wide truncate">
-          {photo.title}
-        </p>
-      </figcaption>
+        {/* The print develops as it scrolls into view: washed-out and soft → sharp, full color */}
+        <motion.div
+          initial={
+            reduceMotion
+              ? false
+              : { filter: "sepia(0.45) brightness(1.35) contrast(0.75) saturate(0.35) blur(5px)" }
+          }
+          whileInView={{ filter: "sepia(0) brightness(1) contrast(1) saturate(1) blur(0px)" }}
+          viewport={{ once: true, margin: "0px 0px -8% 0px" }}
+          transition={{ duration: 1.4, ease: "easeOut" }}
+          className="relative overflow-hidden bg-neutral-900"
+          style={{ aspectRatio: `${photo.width} / ${photo.height}`, height }}
+        >
+          <Image
+            src={photo.src}
+            alt={photo.title}
+            fill
+            sizes={sizes}
+            className="object-cover group-hover:scale-[1.04] transition-transform duration-700"
+          />
+          {/* Warm light leak sweeping the print once per hover */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="light-leak absolute -top-1/4 -bottom-1/4 w-1/2 bg-linear-to-r from-transparent via-amber-200/25 to-transparent" />
+          </div>
+          {/* Rebate frame number, contact-sheet style */}
+          <span className="absolute bottom-1 right-1.5 font-mono text-[8px] md:text-[9px] font-bold tracking-widest text-amber-300/80 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+            {String(index + 1).padStart(2, "0")}A
+          </span>
+        </motion.div>
+        <figcaption className="bg-white px-3 py-2">
+          <p className="text-neutral-900 text-[11px] md:text-xs font-semibold tracking-wide truncate">
+            {photo.title}
+          </p>
+        </figcaption>
+      </div>
     </motion.figure>
   );
 }
@@ -143,11 +167,17 @@ export default function CollectionGallery({ collection }: { collection: Collecti
           <p className="text-amber-400 mt-4 text-sm italic font-semibold tracking-widest uppercase">
             {collection.tagline}
           </p>
+          {/* Label stripe — the same gradient wash as this roll's canister on the shelf */}
+          <div
+            className={`mt-6 h-1 w-24 rounded-full bg-linear-to-r ${collection.gradient}`}
+            aria-hidden
+          />
           <p className="text-gray-400 mt-6 text-sm md:text-base leading-relaxed max-w-md">
             {collection.description}
           </p>
-          <p className="text-gray-600 mt-6 text-[11px] font-mono tracking-widest uppercase">
-            {collection.photos.length} frames
+          <p className="text-gray-600 mt-6 text-[11px] font-mono font-bold tracking-widest uppercase">
+            Roll {collection.slug}-135 · {collection.photos.length} exp ·{" "}
+            <span className="text-amber-400/80">developed</span>
           </p>
         </motion.header>
 
@@ -162,6 +192,7 @@ export default function CollectionGallery({ collection }: { collection: Collecti
                 <PolaroidFrame
                   key={photo.src}
                   photo={photo}
+                  index={row.start + j}
                   height={row.height}
                   sizes="(max-width: 768px) 45vw, 22vw"
                   onClick={() => setLightboxIndex(row.start + j)}
@@ -172,12 +203,32 @@ export default function CollectionGallery({ collection }: { collection: Collecti
         </div>
       </div>
 
+      {/* Film-edge divider: the staircase hands off to the full contact sheet */}
+      <div className="mt-10 md:mt-14 mb-8 md:mb-10 flex items-center gap-3 md:gap-4" aria-hidden>
+        <div className="h-px flex-1 bg-linear-to-r from-transparent via-white/10 to-white/20" />
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span key={i} className="h-1.5 w-2 rounded-full bg-white/20" />
+          ))}
+        </div>
+        <p className="font-mono text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-gray-600">
+          full roll
+        </p>
+        <div className="flex items-center gap-1.5">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <span key={i} className="h-1.5 w-2 rounded-full bg-white/20" />
+          ))}
+        </div>
+        <div className="h-px flex-1 bg-linear-to-l from-transparent via-white/10 to-white/20" />
+      </div>
+
       {/* The waterfall widens into the scrollable list */}
-      <div className="mt-6 md:mt-8 columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8">
+      <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 md:gap-8">
         {listPhotos.map((photo, i) => (
           <div key={photo.src} className="mb-6 md:mb-8 break-inside-avoid">
             <PolaroidFrame
               photo={photo}
+              index={stairTotal + i}
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               onClick={() => setLightboxIndex(stairTotal + i)}
             />
@@ -199,6 +250,14 @@ export default function CollectionGallery({ collection }: { collection: Collecti
             onClick={close}
             className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex flex-col"
           >
+            {/* Viewfinder HUD readout, same language as the hero */}
+            <div className="absolute top-7 left-6 md:top-8 md:left-8 z-10 font-mono text-[9px] md:text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500 select-none">
+              <span className="text-amber-400/90">
+                {String(lightboxIndex + 1).padStart(2, "0")}A
+              </span>
+              <span> · {collection.name}</span>
+            </div>
+
             <button
               onClick={close}
               aria-label="Close"
@@ -239,6 +298,11 @@ export default function CollectionGallery({ collection }: { collection: Collecti
                 className="object-contain"
                 loading="eager"
               />
+              {/* Viewfinder corner brackets framing the stage */}
+              <span className="absolute top-0 left-0 w-6 h-6 md:w-10 md:h-10 border-t-2 border-l-2 border-white/25 pointer-events-none" aria-hidden />
+              <span className="absolute top-0 right-0 w-6 h-6 md:w-10 md:h-10 border-t-2 border-r-2 border-white/25 pointer-events-none" aria-hidden />
+              <span className="absolute bottom-0 left-0 w-6 h-6 md:w-10 md:h-10 border-b-2 border-l-2 border-white/25 pointer-events-none" aria-hidden />
+              <span className="absolute bottom-0 right-0 w-6 h-6 md:w-10 md:h-10 border-b-2 border-r-2 border-white/25 pointer-events-none" aria-hidden />
             </motion.div>
 
             <div
@@ -251,8 +315,13 @@ export default function CollectionGallery({ collection }: { collection: Collecti
               <p className="text-gray-400 text-xs md:text-sm mt-1 max-w-xl mx-auto leading-relaxed">
                 {selected.description}
               </p>
-              <p className="text-gray-600 text-[10px] font-mono tracking-[0.3em] mt-3">
-                {lightboxIndex + 1} / {collection.photos.length}
+              <p className="text-[10px] font-mono font-bold tracking-[0.3em] mt-3">
+                <span className="text-amber-400/90">
+                  {String(lightboxIndex + 1).padStart(2, "0")}
+                </span>
+                <span className="text-white/25">
+                  /{String(collection.photos.length).padStart(2, "0")}
+                </span>
               </p>
             </div>
           </motion.div>
