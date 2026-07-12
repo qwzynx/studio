@@ -9,6 +9,11 @@ export type CollectionPhoto = {
   height: number;
   title: string;
   description: string;
+  exif: {
+    aperture: string;
+    shutter: string;
+    iso: number;
+  };
 };
 
 export type Collection = {
@@ -20,6 +25,66 @@ export type Collection = {
   photos: CollectionPhoto[];
 };
 
+// Plausible camera settings per genre, cycled by frame index. Placeholder
+// data like everything else here — replace with real EXIF when dropping in
+// actual exports.
+const EXIF_POOLS: Record<string, { aperture: string; shutter: string; iso: number }[]> = {
+  portrait: [
+    { aperture: "f/1.8", shutter: "1/250", iso: 200 },
+    { aperture: "f/2.0", shutter: "1/320", iso: 100 },
+    { aperture: "f/2.8", shutter: "1/200", iso: 400 },
+    { aperture: "f/1.4", shutter: "1/500", iso: 100 },
+  ],
+  street: [
+    { aperture: "f/5.6", shutter: "1/500", iso: 400 },
+    { aperture: "f/8", shutter: "1/1000", iso: 800 },
+    { aperture: "f/4", shutter: "1/250", iso: 1600 },
+    { aperture: "f/7.1", shutter: "1/640", iso: 400 },
+  ],
+  landscape: [
+    { aperture: "f/11", shutter: "1/60", iso: 100 },
+    { aperture: "f/8", shutter: "1/125", iso: 100 },
+    { aperture: "f/16", shutter: "2s", iso: 100 },
+    { aperture: "f/13", shutter: "90s", iso: 64 },
+  ],
+  nature: [
+    { aperture: "f/5.6", shutter: "1/2000", iso: 800 },
+    { aperture: "f/4", shutter: "1/1000", iso: 1600 },
+    { aperture: "f/8", shutter: "1/125", iso: 400 },
+    { aperture: "f/6.3", shutter: "1/1600", iso: 3200 },
+  ],
+  night: [
+    { aperture: "f/1.4", shutter: "1/60", iso: 3200 },
+    { aperture: "f/2", shutter: "1/30", iso: 6400 },
+    { aperture: "f/2.8", shutter: "30s", iso: 1600 },
+    { aperture: "f/1.8", shutter: "1/80", iso: 2500 },
+  ],
+  studio: [
+    { aperture: "f/8", shutter: "1/200", iso: 100 },
+    { aperture: "f/11", shutter: "1/160", iso: 100 },
+    { aperture: "f/5.6", shutter: "1/200", iso: 200 },
+    { aperture: "f/9", shutter: "1/8000", iso: 100 },
+  ],
+  product: [
+    { aperture: "f/11", shutter: "1/160", iso: 100 },
+    { aperture: "f/8", shutter: "1/200", iso: 100 },
+    { aperture: "f/16", shutter: "1/125", iso: 100 },
+    { aperture: "f/10", shutter: "1/160", iso: 200 },
+  ],
+  architecture: [
+    { aperture: "f/8", shutter: "1/250", iso: 100 },
+    { aperture: "f/11", shutter: "1/125", iso: 200 },
+    { aperture: "f/9", shutter: "1/320", iso: 100 },
+    { aperture: "f/7.1", shutter: "1/500", iso: 400 },
+  ],
+  events: [
+    { aperture: "f/2.8", shutter: "1/250", iso: 1600 },
+    { aperture: "f/2", shutter: "1/200", iso: 3200 },
+    { aperture: "f/2.8", shutter: "1/320", iso: 800 },
+    { aperture: "f/1.8", shutter: "1/160", iso: 2000 },
+  ],
+};
+
 // Placeholder dimensions by filename index — replace per-photo when dropping
 // in real exports.
 const tempPhoto = (
@@ -28,13 +93,17 @@ const tempPhoto = (
   size: [number, number],
   title: string,
   description: string
-): CollectionPhoto => ({
-  src: `/photos/temp/${slug}-${index}.jpg`,
-  width: size[0],
-  height: size[1],
-  title,
-  description,
-});
+): CollectionPhoto => {
+  const pool = EXIF_POOLS[slug];
+  return {
+    src: `/photos/temp/${slug}-${index}.jpg`,
+    width: size[0],
+    height: size[1],
+    title,
+    description,
+    exif: pool[(index - 1) % pool.length],
+  };
+};
 
 export const collections: Collection[] = [
   {

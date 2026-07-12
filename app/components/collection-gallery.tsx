@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Image from "next/image";
@@ -102,6 +102,9 @@ function PolaroidFrame({
 export default function CollectionGallery({ collection }: { collection: Collection }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const reduceMotion = useReducedMotion();
+  // True while a swipe is in flight, so the click that follows a drag release
+  // doesn't fall through to the backdrop and close the viewer.
+  const draggingRef = useRef(false);
 
   const stairStarts = STAIR_ROWS.map((_, i) =>
     STAIR_ROWS.slice(0, i).reduce((sum, r) => sum + r.count, 0)
@@ -359,13 +362,40 @@ export default function CollectionGallery({ collection }: { collection: Collecti
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.15}
+              onDragStart={() => {
+                draggingRef.current = true;
+              }}
               onDragEnd={(_, info) => {
                 const pull = info.offset.x + info.velocity.x * 0.2;
                 if (pull < -80) step(1);
                 else if (pull > 80) step(-1);
+                setTimeout(() => {
+                  draggingRef.current = false;
+                }, 0);
               }}
               className="relative flex-1 m-6 md:m-12 mb-0 touch-pan-y"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                // The stage fills the screen but the print is letterboxed
+                // inside it (object-contain). Only a click that lands on the
+                // print itself keeps the viewer open — the empty margins act
+                // like the backdrop and close it.
+                if (draggingRef.current) {
+                  e.stopPropagation();
+                  return;
+                }
+                const rect = e.currentTarget.getBoundingClientRect();
+                const ratio = selected.width / selected.height;
+                const printW = Math.min(rect.width, rect.height * ratio);
+                const printH = printW / ratio;
+                const x0 = rect.left + (rect.width - printW) / 2;
+                const y0 = rect.top + (rect.height - printH) / 2;
+                const onPrint =
+                  e.clientX >= x0 &&
+                  e.clientX <= x0 + printW &&
+                  e.clientY >= y0 &&
+                  e.clientY <= y0 + printH;
+                if (onPrint) e.stopPropagation();
+              }}
             >
               <Image
                 src={selected.src}
@@ -396,15 +426,27 @@ export default function CollectionGallery({ collection }: { collection: Collecti
               <span className="absolute bottom-0 right-0 w-6 h-6 md:w-10 md:h-10 border-b-2 border-r-2 border-white/25 pointer-events-none" aria-hidden />
             </motion.div>
 
-            <div
-              className="shrink-0 px-6 md:px-12 py-6 text-center"
-              onClick={(e) => e.stopPropagation()}
-            >
+            {/* No stopPropagation here — a click anywhere off the print
+                (caption strip included) closes the viewer */}
+            <div className="shrink-0 px-6 md:px-12 py-6 text-center">
               <p className="text-white font-bold text-base md:text-lg tracking-tight">
                 {selected.title}
               </p>
               <p className="text-gray-400 text-xs md:text-sm mt-1 max-w-xl mx-auto leading-relaxed">
                 {selected.description}
+              </p>
+              {/* Shooting data, contact-sheet style */}
+              <p className="mt-3 font-mono text-[10px] md:text-[11px] font-bold uppercase tracking-[0.25em] text-gray-500">
+                <span className="text-amber-400/80">{selected.exif.aperture}</span>
+                <span className="mx-2 text-white/20">·</span>
+                <span>
+                  {/* Long exposures already carry their unit ("30s") */}
+                  {selected.exif.shutter.endsWith("s")
+                    ? selected.exif.shutter
+                    : `${selected.exif.shutter}s`}
+                </span>
+                <span className="mx-2 text-white/20">·</span>
+                <span>ISO {selected.exif.iso}</span>
               </p>
               <p className="text-[10px] font-mono font-bold tracking-[0.3em] mt-3">
                 <span className="text-amber-400/90">
