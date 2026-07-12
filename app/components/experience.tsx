@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion";
 
 // RACK FOCUS — the career as one manual prime lens. Every chapter is
 // engraved on the focus ring at the distance it happened: 2019 sits at the
@@ -95,9 +95,15 @@ function Ticks({ dim = false }: { dim?: boolean }) {
   );
 }
 
+// Where the scale sits (x offset) when chapter `i` is under the index line.
+const ringX = (i: number) => -((i + 1) * RING_STEP + RING_STEP / 2);
+
 // The focus ring: a knurled barrel with the distance window in the middle.
 // The scale slides so the selected chapter's engraving sits under the fixed
 // index line; a faint sub-MFD mark and a hard stop past infinity bookend it.
+// Grab anywhere on the barrel and drag to rack focus by hand — the ring
+// follows the pointer, re-focuses live as engravings cross the index, and
+// settles on the nearest marking when released.
 function FocusRing({
   selected,
   onSelect,
@@ -106,24 +112,69 @@ function FocusRing({
   onSelect: (i: number) => void;
 }) {
   const reduce = useReducedMotion();
+  const x = useMotionValue(ringX(selected));
+  const dragging = useRef(false);
+  const panOrigin = useRef(0);
+
+  const minX = ringX(chapters.length - 1); // hard stop at infinity
+  const maxX = ringX(0); // hard stop at minimum focus distance
+
+  const clampX = (v: number) => Math.min(maxX, Math.max(minX, v));
+  const nearest = (v: number) =>
+    Math.min(chapters.length - 1, Math.max(0, Math.round(-v / RING_STEP - 1.5)));
+  const settle = (i: number) =>
+    animate(x, ringX(i), reduce ? { duration: 0 } : ringSpring);
+
+  // Clicks (on cards or engravings) pull focus too; skip while a hand is on
+  // the ring — the pointer, not the click, owns the position then.
+  useEffect(() => {
+    if (dragging.current) return;
+    const controls = settle(selected);
+    return () => controls.stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, reduce]);
+
   const knurl = {
     backgroundImage:
       "repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 7px)",
   };
 
   return (
-    <div className="relative h-20 overflow-hidden border-b border-white/10 bg-[#0c0c0b]">
+    <motion.div
+      className="relative h-20 cursor-grab touch-pan-y select-none overflow-hidden border-b border-white/10 bg-[#0c0c0b] active:cursor-grabbing"
+      onPanStart={() => {
+        dragging.current = true;
+        x.stop();
+        panOrigin.current = x.get();
+      }}
+      onPan={(_, info) => {
+        const raw = panOrigin.current + info.offset.x;
+        // Past the end stops the ring resists like a real barrel
+        const over = raw > maxX ? raw - maxX : raw < minX ? raw - minX : 0;
+        x.set(clampX(raw) + over * 0.18);
+        const i = nearest(clampX(raw));
+        if (i !== selected) onSelect(i);
+      }}
+      onPanEnd={() => {
+        const i = nearest(clampX(x.get()));
+        onSelect(i);
+        settle(i);
+        // Let the click this pointer-up produces be swallowed first
+        setTimeout(() => (dragging.current = false), 0);
+      }}
+      onClickCapture={(e) => {
+        if (dragging.current) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }}
+    >
       {/* Knurled grip strips top and bottom */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-2" style={knurl} aria-hidden />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5" style={knurl} aria-hidden />
 
       {/* The sliding scale — anchored at the window's centre, offset per selection */}
-      <motion.div
-        className="absolute inset-y-0 left-1/2 flex"
-        initial={false}
-        animate={{ x: -((selected + 1) * RING_STEP + RING_STEP / 2) }}
-        transition={reduce ? { duration: 0 } : ringSpring}
-      >
+      <motion.div className="absolute inset-y-0 left-1/2 flex" style={{ x }}>
         {/* Below minimum focus distance — engraved, unreachable */}
         <div
           className="relative flex h-full w-[132px] flex-none items-center justify-center pb-3"
@@ -177,7 +228,7 @@ function FocusRing({
       >
         <span className="absolute left-1/2 top-0 -translate-x-1/2 border-x-[5px] border-t-[6px] border-x-transparent border-t-amber-400" />
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -348,7 +399,7 @@ export default function Experience({ hideTitle = false }: { hideTitle?: boolean 
         </div>
 
         <p className="px-4 pb-3 text-right font-mono text-[8px] uppercase tracking-[0.25em] text-gray-700 md:px-5 md:text-[9px]">
-          manual focus · click a chapter to pull it sharp
+          manual focus · drag the ring or click a chapter to pull it sharp
         </p>
 
         {/* Barrel base — engraved stats + the nudge toward booking */}
