@@ -276,7 +276,7 @@ function DetailStrip({
           aria-label={`Close ${collection.name} details`}
           layoutId={`film-roll-${collection.slug}`}
           transition={reduceMotion ? { duration: 0 } : flightSpring}
-          className="group relative z-10 h-44 w-20 flex-none cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 md:h-52 md:w-28"
+          className="group relative z-10 h-48 w-16 flex-none cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 md:h-52 md:w-28"
         >
           <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5">
             <CanisterShell
@@ -290,7 +290,7 @@ function DetailStrip({
           </div>
         </motion.button>
       ) : (
-        <div className="h-44 w-20 flex-none md:h-52 md:w-28" aria-hidden />
+        <div className="h-48 w-16 flex-none md:h-52 md:w-28" aria-hidden />
       )}
 
       {/* The film itself, pulled out from behind the canister: the whole
@@ -305,11 +305,11 @@ function DetailStrip({
           onAnimationComplete={() => {
             if (!open) onRolledIn();
           }}
-          className="group relative flex h-44 flex-col overflow-hidden rounded-r-2xl border border-white/10 bg-neutral-950 shadow-xl shadow-black/50 md:h-52"
+          className="group relative flex h-48 flex-col overflow-hidden rounded-r-2xl border border-white/10 bg-neutral-950 shadow-xl shadow-black/50 md:h-52"
         >
           <SprocketRow />
 
-          <div className="flex min-h-0 min-w-0 flex-1 items-center gap-4 pl-5 pr-3 md:gap-6 md:pl-7 md:pr-4">
+          <div className="flex min-h-0 min-w-0 flex-1 items-center gap-4 pl-4 pr-3 md:gap-6 md:pl-7 md:pr-4">
             {/* Details */}
             <div className="relative min-w-0 flex-1">
               <div className={`absolute -inset-2 rounded-xl bg-linear-to-br ${collection.gradient} opacity-[0.07]`} />
@@ -336,12 +336,13 @@ function DetailStrip({
               </div>
             </div>
 
-            {/* Contact-sheet preview frames */}
-            <div className="hidden min-w-0 gap-2 md:flex md:gap-3">
+            {/* Contact-sheet preview frames — lg+ only: below that the frames
+                would crush the text column to nothing */}
+            <div className="hidden min-w-0 gap-3 lg:flex">
               {collection.photos.slice(0, 3).map((photo, i) => (
                 <div
                   key={photo.src}
-                  className={`relative aspect-[4/3] h-28 min-w-0 overflow-hidden rounded-lg border border-white/10 lg:h-32 ${
+                  className={`relative aspect-[4/3] h-32 min-w-0 overflow-hidden rounded-lg border border-white/10 ${
                     i === 2 ? "hidden xl:block" : ""
                   }`}
                 >
@@ -481,22 +482,31 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
             lift headroom inside the scroll container's clip. */}
         {/* lg+: the shelf fits, so drop the scroll clipping — the roll's
             return flight up to its slot stays fully visible */}
-        <div className="w-full overflow-x-auto overflow-y-clip pt-3 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] lg:overflow-visible">
-          <div className="mx-auto flex w-max items-end gap-1 px-0.5 sm:gap-1.5 md:gap-2">
-            {collections.map((collection, i) => (
-              <FilmRoll
-                key={collection.slug}
-                collection={collection}
-                index={i}
-                isAway={current === collection.slug && !homing}
-                isOpen={target === collection.slug}
-                onToggle={() => handleToggle(collection.slug)}
-              />
-            ))}
+        <div className="relative">
+          <div className="w-full overflow-x-auto overflow-y-clip pt-3 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] lg:overflow-visible">
+            <div className="mx-auto flex w-max items-end gap-1 px-0.5 sm:gap-1.5 md:gap-2">
+              {collections.map((collection, i) => (
+                <FilmRoll
+                  key={collection.slug}
+                  collection={collection}
+                  index={i}
+                  isAway={current === collection.slug && !homing}
+                  isOpen={target === collection.slug}
+                  onToggle={() => handleToggle(collection.slug)}
+                />
+              ))}
+            </div>
           </div>
+          {/* Edge fades signal there are more rolls off-screen — the shelf
+              only scrolls below lg, so they vanish with the scroll clipping */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-linear-to-r from-[#080807] to-transparent lg:hidden" aria-hidden />
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-linear-to-l from-[#080807] to-transparent lg:hidden" aria-hidden />
         </div>
         {/* Shelf line the rolls stand on */}
         <div className="h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent" aria-hidden />
+        <p className="mt-2 w-full text-center font-mono text-[8px] uppercase tracking-[0.25em] text-gray-600 lg:hidden">
+          swipe the shelf · tap a roll
+        </p>
 
         {/* Detail area the clicked roll drops into and unrolls across.
             Deliberately NOT an AnimatePresence: the height is animated

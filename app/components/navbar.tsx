@@ -44,7 +44,7 @@ export default function Navbar() {
         background: `conic-gradient(from 0deg, rgba(245, 158, 11, 0.8) ${scrollProgress}%, rgba(255, 255, 255, 0.1) ${scrollProgress}%)`,
       }}
     >
-      <nav className="flex flex-row md:flex-col items-center gap-5 md:gap-10 px-6 py-3 md:py-8 bg-[#080807]/90 backdrop-blur-xl rounded-full h-full">
+      <nav className="flex flex-row md:flex-col items-center gap-3.5 sm:gap-5 md:gap-10 px-5 sm:px-6 py-3 md:py-8 bg-[#080807]/90 backdrop-blur-xl rounded-full h-full">
         {/* Logo - Hidden on tiny screens, shown on md+ */}
         <div className="hidden md:flex w-full justify-center">
           <a
@@ -58,7 +58,7 @@ export default function Navbar() {
         </div>
 
         {/* Primary Links */}
-        <div className="flex flex-row md:flex-col gap-6 md:gap-8 items-center text-gray-300">
+        <div className="flex flex-row md:flex-col gap-4 sm:gap-6 md:gap-8 items-center text-gray-300">
           <a
             href="#photos"
             className="hover:text-white transition-colors duration-300 tracking-widest text-xs md:text-sm font-medium uppercase md:capitalize writing-v-rl"
@@ -106,7 +106,7 @@ export default function Navbar() {
         <div className="w-px h-6 bg-white/10 md:hidden mx-1"></div>
 
         {/* Social Icons */}
-        <div className="flex flex-row md:flex-col gap-4 md:gap-4 items-center text-gray-400">
+        <div className="flex flex-row md:flex-col gap-3 sm:gap-4 items-center text-gray-400">
           <a href="https://www.instagram.com/qwzynx/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-300">
             <FaInstagram size={18} className="md:w-5 md:h-5 w-4.5 h-4.5" />
           </a>

@@ -113,8 +113,9 @@ function RackUnit({ unit, index }: { unit: (typeof rack)[number]; index: number 
         </p>
       </div>
 
-      {/* Meter — dark until the unit is hovered, then fills like a power-up */}
-      <div className="flex items-center gap-[3px]" aria-hidden>
+      {/* Meter — dark until the unit is hovered, then fills like a power-up.
+          Hidden on phones: its ~75px would truncate every unit name */}
+      <div className="hidden items-center gap-[3px] sm:flex" aria-hidden>
         {Array.from({ length: SEGMENTS }).map((_, i) => (
           <span
             key={i}
