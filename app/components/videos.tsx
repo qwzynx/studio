@@ -7,8 +7,10 @@ import { Play, ArrowUpRight } from "lucide-react";
 
 // The section is staged as an editing suite: a program monitor up top and an
 // NLE timeline below, where each video is a clip laid on the V1 track with a
-// matching block on A1. Clicking a clip loads it into the monitor; the red
-// playhead loops across whichever clip is selected. Clip widths are
+// matching block on A1. Left alone, the red playhead plays through the whole
+// sequence on repeat, loading each clip into the monitor as it reaches it.
+// Clicking a clip pins it — the playhead loops that clip only — and clicking
+// it again resumes the full-sequence pass. Clip widths are
 // proportional to real duration, so the timeline doubles as an honest
 // at-a-glance runtime comparison.
 //
@@ -84,17 +86,20 @@ function AudioWave({ clip }: { clip: number }) {
 }
 
 export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
-  const [selected, setSelected] = useState(0);
+  // `current` is whatever the monitor shows; `pinned` means the user clicked a
+  // clip, so the playhead loops it instead of playing through the sequence.
+  const [current, setCurrent] = useState(0);
+  const [pinned, setPinned] = useState(false);
   const reduce = useReducedMotion();
-  // The playhead loop is infinite — park it while the timeline is off-screen
-  // so it doesn't keep the main thread busy for the whole session.
+  // The playhead animation runs indefinitely — park it while the timeline is
+  // off-screen so it doesn't keep the main thread busy for the whole session.
   const timelineRef = useRef<HTMLDivElement>(null);
   const timelineInView = useInView(timelineRef, { amount: 0.2 });
   const playheadParked = reduce || !timelineInView;
-  const video = videos[selected];
+  const video = videos[current];
 
-  const startPct = (clipStarts[selected] / totalSeconds) * 100;
-  const endPct = ((clipStarts[selected] + seconds[selected]) / totalSeconds) * 100;
+  const startPct = (clipStarts[current] / totalSeconds) * 100;
+  const endPct = ((clipStarts[current] + seconds[current]) / totalSeconds) * 100;
 
   // Ruler: labels every 2 minutes, minor ticks every 30 seconds.
   const labelTicks = Array.from({ length: Math.floor(totalSeconds / 120) + 1 }, (_, i) => i * 120);
@@ -224,7 +229,7 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
             <div className="grid grid-cols-[auto_1fr] items-baseline gap-x-4 gap-y-2 font-mono text-[11px] md:text-xs">
               <span className="uppercase tracking-[0.2em] text-gray-600">Seq</span>
               <motion.span
-                key={`t-${selected}`}
+                key={`t-${current}`}
                 initial={reduce ? false : { opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="font-sans text-sm md:text-lg font-bold tracking-tight text-white"
@@ -248,7 +253,7 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
               </span>
             </div>
             <motion.p
-              key={`d-${selected}`}
+              key={`d-${current}`}
               initial={reduce ? false : { opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
@@ -308,26 +313,37 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
                   <button
                     key={v.title}
                     type="button"
-                    onClick={() => setSelected(i)}
-                    aria-pressed={selected === i}
-                    aria-label={`Load ${v.title} into the monitor`}
+                    onClick={() => {
+                      if (pinned && current === i) {
+                        setPinned(false);
+                      } else {
+                        setCurrent(i);
+                        setPinned(true);
+                      }
+                    }}
+                    aria-pressed={pinned && current === i}
+                    aria-label={
+                      pinned && current === i
+                        ? `Stop looping ${v.title} and play the whole sequence`
+                        : `Loop ${v.title} in the monitor`
+                    }
                     style={{ flexGrow: seconds[i], flexBasis: 0 }}
                     className={`relative min-w-0 overflow-hidden rounded-md border px-2 py-1.5 text-left transition-all duration-300 ${
-                      selected === i
+                      current === i
                         ? "z-10 border-amber-400/80 shadow-[0_0_20px_rgba(245,158,11,0.2)]"
                         : "border-white/15 hover:border-white/40"
                     }`}
                   >
                     <span
                       className={`absolute inset-0 bg-linear-to-br ${v.gradient} transition-opacity duration-300 ${
-                        selected === i ? "opacity-70" : "opacity-35"
+                        current === i ? "opacity-70" : "opacity-35"
                       }`}
                       aria-hidden
                     />
                     <span className="relative flex h-full flex-col justify-between">
                       <span
                         className={`truncate text-[10px] md:text-xs font-bold tracking-tight ${
-                          selected === i ? "text-white" : "text-white/70"
+                          current === i ? "text-white" : "text-white/70"
                         }`}
                       >
                         {v.title}
@@ -347,7 +363,7 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
                     key={v.title}
                     style={{ flexGrow: seconds[i], flexBasis: 0 }}
                     className={`min-w-0 overflow-hidden rounded-md border transition-colors duration-300 ${
-                      selected === i ? "border-amber-400/40 bg-amber-500/[0.06]" : "border-white/10 bg-white/[0.02]"
+                      current === i ? "border-amber-400/40 bg-amber-500/[0.06]" : "border-white/10 bg-white/[0.02]"
                     }`}
                   >
                     <AudioWave clip={i} />
@@ -355,9 +371,13 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
                 ))}
               </div>
 
-              {/* Playhead — loops across the selected clip */}
+              {/* Playhead — sweeps the current clip. Unpinned, finishing a
+                  clip advances the sequence to the next one; pinned, it
+                  repeats the same clip forever. */}
               <motion.div
-                key={selected}
+                // pinned is part of the key because toggling it only changes
+                // the transition, which alone wouldn't restart the animation
+                key={`${current}-${pinned}`}
                 initial={{ left: `${startPct}%` }}
                 animate={
                   playheadParked
@@ -367,8 +387,17 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
                 transition={
                   playheadParked
                     ? { duration: 0 }
-                    : { duration: seconds[selected] / 20, ease: "linear", repeat: Infinity }
+                    : {
+                        duration: seconds[current] / 20,
+                        ease: "linear",
+                        repeat: pinned ? Infinity : 0,
+                      }
                 }
+                onAnimationComplete={() => {
+                  if (!playheadParked && !pinned) {
+                    setCurrent((c) => (c + 1) % videos.length);
+                  }
+                }}
                 className="pointer-events-none absolute inset-y-0 z-20 w-px bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"
                 aria-hidden
               >
@@ -378,7 +407,7 @@ export default function Videos({ hideTitle = false }: { hideTitle?: boolean }) {
           </div>
 
           <p className="mt-3 text-right font-mono text-[8px] md:text-[9px] uppercase tracking-[0.3em] text-gray-700">
-            sequence · {formatTick(totalSeconds)} total — click a clip to load it
+            sequence · {formatTick(totalSeconds)} total — click a clip to loop it{pinned ? " · click again to resume" : ""}
           </p>
         </div>
       </motion.div>
