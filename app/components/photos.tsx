@@ -387,16 +387,23 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
   const reduceMotion = useReducedMotion();
 
   // Below lg the shelf scrolls, and the scroll gets a film-camera treatment:
-  // canisters recede and tilt away toward the viewport edges (each slot gets
-  // its own perspective transform, coverflow-style, anchored to the shelf
-  // line via origin-bottom), scroll-snap ratchets swipes roll by roll like a
-  // film advance, and a counter HUD under the shelf tracks whichever roll
-  // sits in the "gate" (viewport centre). All transform writes go straight
-  // to the DOM in one rAF per scroll event; React only re-renders when the
-  // centred INDEX changes. Transforms live on a plain wrapper div around
-  // each FilmRoll — never on the motion elements, whose inline transforms
-  // framer owns. offsetLeft (layout position) is used for the geometry so
-  // the transforms we write never feed back into the measurement.
+  // canisters recede and tilt away from the "gate" (each slot gets its own
+  // perspective transform, coverflow-style, anchored to the shelf line via
+  // origin-bottom) while the roll IN the gate stands flat, full-bright, and
+  // lifted slightly off the shelf; scroll-snap ratchets swipes roll by roll
+  // like a film advance, and a counter HUD under the shelf names the gated
+  // roll. The gate is scroll PROGRESS mapped across the rolls — not the raw
+  // viewport centre — so the first/last rolls are selectable at the ends of
+  // the range even though they can never physically reach the centre; tilt,
+  // lift, and counter all key off the same gate so they never disagree.
+  // Everything (including the lift) is a pure function of scroll position
+  // written straight to the DOM in one rAF per scroll event — no CSS
+  // transitions that could lag behind a fast fling — and React only
+  // re-renders when the gated INDEX changes. Transforms live on a plain
+  // wrapper div around each FilmRoll — never on the motion elements, whose
+  // inline transforms framer owns. offsetLeft (layout position) is used for
+  // the geometry so the transforms we write never feed back into the
+  // measurement.
   const scrollerRef = useRef<HTMLDivElement>(null);
   const rollWraps = useRef<(HTMLDivElement | null)[]>([]);
   const frameRef = useRef(0);
@@ -414,12 +421,24 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
       if (scroller.clientWidth === 0) return;
       const maxScroll = scroller.scrollWidth - scroller.clientWidth;
       const canScroll = maxScroll > 8;
-      const mid = scroller.scrollLeft + scroller.clientWidth / 2;
       const centers: number[] = [];
       rollWraps.current.forEach((el, i) => {
+        if (el) centers[i] = el.offsetLeft + el.offsetWidth / 2;
+      });
+      if (centers.length < 2) return;
+      // The gate in content coordinates (see the comment block above)
+      const gate =
+        centers[0] +
+        (centers[centers.length - 1] - centers[0]) * (canScroll ? scroller.scrollLeft / maxScroll : 0);
+      let best = 0;
+      let bestDist = Infinity;
+      rollWraps.current.forEach((el, i) => {
         if (!el) return;
-        const center = el.offsetLeft + el.offsetWidth / 2;
-        centers[i] = center;
+        const d = centers[i] - gate;
+        if (Math.abs(d) < bestDist) {
+          bestDist = Math.abs(d);
+          best = i;
+        }
         if (!canScroll || reduceMotion) {
           // lg+ (shelf fits) or reduced motion: leave the slots untouched
           if (el.style.transform) {
@@ -428,30 +447,16 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
           }
           return;
         }
-        const t = Math.max(-1, Math.min(1, (center - mid) / (scroller.clientWidth * 0.6)));
-        el.style.transform = `perspective(700px) rotateY(${(-t * 18).toFixed(2)}deg) scale(${(1 - Math.abs(t) * 0.12).toFixed(3)})`;
+        const t = Math.max(-1, Math.min(1, d / (scroller.clientWidth * 0.6)));
+        // Lift peaks at the gate and dies off within roughly a slot's
+        // width, so mid-swipe it hands over smoothly between neighbours
+        const near = Math.max(0, 1 - Math.abs(d) / (scroller.clientWidth * 0.22));
+        el.style.transform = `perspective(700px) translateY(${(-near * near * 10).toFixed(2)}px) rotateY(${(-t * 18).toFixed(2)}deg) scale(${(1 - Math.abs(t) * 0.12).toFixed(3)})`;
         el.style.opacity = (1 - Math.abs(t) * 0.35).toFixed(3);
       });
-      // Counter: pick by scroll PROGRESS mapped across the rolls, not by
-      // which roll is nearest the viewport centre — the first/last rolls
-      // can never physically reach the centre, but the readout should
-      // still hit 01 and NN at the ends of the scroll range.
-      if (canScroll && centers.length > 1) {
-        const gate =
-          centers[0] + (centers[centers.length - 1] - centers[0]) * (scroller.scrollLeft / maxScroll);
-        let best = 0;
-        let bestDist = Infinity;
-        centers.forEach((c, i) => {
-          const d = Math.abs(c - gate);
-          if (d < bestDist) {
-            bestDist = d;
-            best = i;
-          }
-        });
-        if (frameRef.current !== best) {
-          frameRef.current = best;
-          setFrame(best);
-        }
+      if (canScroll && frameRef.current !== best) {
+        frameRef.current = best;
+        setFrame(best);
       }
     };
     const schedule = () => {
@@ -565,9 +570,11 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
         {/* lg+: the shelf fits, so drop the scroll clipping — the roll's
             return flight up to its slot stays fully visible */}
         <div className="relative">
+          {/* pt-6 below lg: the scroll clip needs headroom for the gated
+              roll's 10px lift plus the 6px hover lift stacked on top of it */}
           <div
             ref={scrollerRef}
-            className="w-full snap-x snap-mandatory overflow-x-auto overflow-y-clip overscroll-x-contain pt-3 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] lg:snap-none lg:overflow-visible"
+            className="w-full snap-x snap-mandatory overflow-x-auto overflow-y-clip overscroll-x-contain pt-6 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.15)_transparent] lg:snap-none lg:overflow-visible lg:pt-3"
           >
             <div className="mx-auto flex w-max items-end gap-1 px-0.5 sm:gap-1.5 md:gap-2">
               {collections.map((collection, i) => (
