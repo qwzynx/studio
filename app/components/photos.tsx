@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
+import { motion, useMotionValue, useSpring, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight, X } from "lucide-react";
@@ -14,7 +14,23 @@ import { collections, type Collection } from "../lib/collections";
 // dashed recess in its shelf slot so no other roll ever moves — and once it
 // lands, the film is pulled out of the canister's slot: the whole printed
 // strip slides rightward inside a clipping wrapper, leading edge first.
-// Closing rolls the film back into the canister and returns it to the shelf.
+// Closing runs the same story backwards, strictly in sequence: the film
+// rolls back INTO the canister first (the canister stays put while it does),
+// then the canister flies home while the detail space collapses. Switching
+// rolls chains close-then-open: A rolls its film in and returns to the
+// shelf, then B flies down and unrolls. The sequencing is driven by
+// animation-complete callbacks, not timers: `target` is the roll the user
+// wants open, `current` is the roll actually mounted in the detail area
+// (`homing` marks the canister's return leg), and `current` only catches up
+// to `target` when the previous phase has finished animating.
+//
+// NOTE: the layoutId flight only animates when the outgoing canister is a
+// live element that unmounts in the SAME commit the incoming one mounts.
+// An element inside an exiting AnimatePresence subtree is frozen and yields
+// no snapshot — the new canister then teleports. That is why the panel's
+// height is animated with a plain `animate` prop (content unmounted
+// manually once it finishes) instead of AnimatePresence, and why `homing`
+// swaps the detail canister for a spacer rather than relying on an exit.
 // Hover effects are fully contained inside each roll's own footprint (lift +
 // cover photo through the label window + a small photo-count detail).
 // Collection data (photos, titles, descriptions) lives in app/lib/collections.ts.
@@ -139,12 +155,18 @@ function HoverPeek({ collection }: { collection: Collection }) {
 function FilmRoll({
   collection,
   index,
-  isActive,
+  isAway,
+  isOpen,
   onToggle,
 }: {
   collection: Collection;
   index: number;
-  isActive: boolean;
+  // The canister currently lives in the detail area (or is still rolling its
+  // film back in down there) — the shelf slot must NOT render it, otherwise
+  // the layoutId flight home fires before the film has rolled in.
+  isAway: boolean;
+  // The roll the user has open or is opening (drives aria-expanded).
+  isOpen: boolean;
   onToggle: () => void;
 }) {
   const size = rollSizes[collection.slug] ?? "md";
@@ -155,7 +177,7 @@ function FilmRoll({
     <motion.button
       type="button"
       onClick={onToggle}
-      aria-expanded={isActive}
+      aria-expanded={isOpen}
       aria-controls="photos-detail"
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
@@ -167,7 +189,7 @@ function FilmRoll({
           it keeps the slot's footprint so no other roll ever moves */}
       <div
         className={`absolute inset-0 flex items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] transition-opacity duration-300 ${
-          isActive ? "opacity-100" : "opacity-0"
+          isAway ? "opacity-100" : "opacity-0"
         }`}
         aria-hidden
       >
@@ -177,19 +199,24 @@ function FilmRoll({
       </div>
 
       {/* The roll itself — lifts on hover (a transform never moves
-          neighbours); on click it flies down to the detail area via layoutId */}
-      {!isActive && (
+          neighbours); on click it flies down to the detail area via layoutId.
+          The hover lift lives on an INNER div: a CSS transform transition on
+          the layoutId element itself would fight framer's per-frame flight
+          transforms and the canister would teleport instead of flying. */}
+      {!isAway && (
         <motion.div
           layoutId={`film-roll-${collection.slug}`}
           transition={reduce ? { duration: 0 } : flightSpring}
-          className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5"
+          className="absolute inset-0"
         >
-          <CanisterShell
-            collection={collection}
-            titleClass={cfg.title}
-            highlight={false}
-            overlays={<HoverPeek collection={collection} />}
-          />
+          <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5">
+            <CanisterShell
+              collection={collection}
+              titleClass={cfg.title}
+              highlight={false}
+              overlays={<HoverPeek collection={collection} />}
+            />
+          </div>
         </motion.div>
       )}
     </motion.button>
@@ -202,41 +229,69 @@ function FilmRoll({
 // before the space collapses.
 function DetailStrip({
   collection,
+  open,
+  withCanister,
   onClose,
+  onRolledIn,
   reduceMotion,
 }: {
   collection: Collection;
+  // true while this roll should be showing its film; flipping it to false
+  // rolls the film back into the canister (which stays put until it's in).
+  open: boolean;
+  // false during the return leg: the canister unmounts HERE (a live-tree
+  // unmount, so its layoutId snapshot survives) and remounts on the shelf,
+  // which is what makes the flight home animate. A spacer keeps the strip's
+  // spot while the panel collapses.
+  withCanister: boolean;
   onClose: () => void;
+  // Fired once the film has fully rolled back in — only then may the parent
+  // collapse the panel and let the canister fly home.
+  onRolledIn: () => void;
   reduceMotion: boolean;
 }) {
-  // The unroll waits for the roll to visibly land (the spring flight has
-  // mostly settled by ~0.6s) so the film clearly comes out of the canister,
-  // not out of thin air.
-  const unroll = { duration: reduceMotion ? 0 : 1, delay: reduceMotion ? 0 : 0.6, ease: [0.25, 1, 0.35, 1] as const };
+  // Opening: the unroll waits for the roll to visibly land (the spring
+  // flight has mostly settled by ~0.6s after mount) so the film clearly
+  // comes out of the canister, not out of thin air. The flight happens
+  // exactly once, at mount — after that window any unroll (e.g. re-opening
+  // an interrupted close) starts immediately instead of pausing mid-strip.
+  // Closing: roll straight back in, no delay.
+  const [flightSettled, setFlightSettled] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setFlightSettled(true), 600);
+    return () => clearTimeout(t);
+  }, []);
+  const filmTransition = open
+    ? { duration: reduceMotion ? 0 : 1, delay: reduceMotion || flightSettled ? 0 : 0.6, ease: [0.25, 1, 0.35, 1] as const }
+    : { duration: reduceMotion ? 0 : 0.5, ease: unrollEase };
 
   return (
     <div className="flex items-stretch">
       {/* The landed canister — same layoutId as its shelf slot, so it flies.
           Clicking it (wherever the roll is) closes the description again. */}
-      <motion.button
-        type="button"
-        onClick={onClose}
-        aria-label={`Close ${collection.name} details`}
-        layoutId={`film-roll-${collection.slug}`}
-        transition={reduceMotion ? { duration: 0 } : flightSpring}
-        className="group relative z-10 h-44 w-20 flex-none cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 md:h-52 md:w-28"
-      >
-        <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5">
-          <CanisterShell
-            collection={collection}
-            titleClass="text-lg md:text-2xl"
-            highlight
-            overlays={<HoverPeek collection={collection} />}
-          />
-          {/* Slot mouth the film feeds out of */}
-          <div className="absolute right-0 inset-y-5 w-1.5 rounded-l bg-black/70 shadow-[inset_1px_0_2px_rgba(0,0,0,0.9)]" aria-hidden />
-        </div>
-      </motion.button>
+      {withCanister ? (
+        <motion.button
+          type="button"
+          onClick={onClose}
+          aria-label={`Close ${collection.name} details`}
+          layoutId={`film-roll-${collection.slug}`}
+          transition={reduceMotion ? { duration: 0 } : flightSpring}
+          className="group relative z-10 h-44 w-20 flex-none cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-amber-400/70 md:h-52 md:w-28"
+        >
+          <div className="absolute inset-0 transition-transform duration-300 ease-out group-hover:-translate-y-1.5 group-focus-visible:-translate-y-1.5">
+            <CanisterShell
+              collection={collection}
+              titleClass="text-lg md:text-2xl"
+              highlight
+              overlays={<HoverPeek collection={collection} />}
+            />
+            {/* Slot mouth the film feeds out of */}
+            <div className="absolute right-0 inset-y-5 w-1.5 rounded-l bg-black/70 shadow-[inset_1px_0_2px_rgba(0,0,0,0.9)]" aria-hidden />
+          </div>
+        </motion.button>
+      ) : (
+        <div className="h-44 w-20 flex-none md:h-52 md:w-28" aria-hidden />
+      )}
 
       {/* The film itself, pulled out from behind the canister: the whole
           printed strip translates out of the slot (leading edge first) inside
@@ -245,9 +300,11 @@ function DetailStrip({
       <div className="relative -ml-2 min-w-0 flex-1 overflow-hidden">
         <motion.div
           initial={{ x: "-100%" }}
-          animate={{ x: 0 }}
-          exit={{ x: "-100%", transition: { duration: reduceMotion ? 0 : 0.5, ease: unrollEase } }}
-          transition={unroll}
+          animate={{ x: open ? 0 : "-100%" }}
+          transition={filmTransition}
+          onAnimationComplete={() => {
+            if (!open) onRolledIn();
+          }}
           className="group relative flex h-44 flex-col overflow-hidden rounded-r-2xl border border-white/10 bg-neutral-950 shadow-xl shadow-black/50 md:h-52"
         >
           <SprocketRow />
@@ -335,14 +392,44 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
   const reticleY = useSpring(mouseY, { stiffness: 350, damping: 30 });
   const [reticle, setReticle] = useState({ visible: false, locked: false });
 
-  // Slug of the clicked roll; it flies down and unrolls beneath the shelf.
-  const [active, setActive] = useState<string | null>(null);
-  const activeCollection = collections.find((c) => c.slug === active) ?? null;
+  // `target` is the roll the user wants open; `current` is the roll actually
+  // mounted in the detail area; `homing` is the return leg (film already
+  // rolled in, canister flying back to the shelf while the panel collapses).
+  // Close sequence: film rolls in (current stays) -> homing (canister swaps
+  // to the shelf and flies home, panel collapses) -> collapse finishes
+  // (current -> null, or straight to the pending switch's roll). Each
+  // hand-off is driven by an animation-complete callback, never a timer.
+  const [target, setTarget] = useState<string | null>(null);
+  const [current, setCurrent] = useState<string | null>(null);
+  const [homing, setHoming] = useState(false);
+  const shownCollection = collections.find((c) => c.slug === current) ?? null;
+  const panelOpen = current !== null && !homing;
+
+  const handleToggle = (slug: string) => {
+    if (target === slug) {
+      // Close (or cancel a pending open) — the film rolls back in first;
+      // the rest of the teardown follows from the animation callbacks.
+      setTarget(null);
+      return;
+    }
+    setTarget(slug);
+    if (current === null) {
+      // Empty detail area: land this roll straight away.
+      setCurrent(slug);
+    } else if (current === slug) {
+      // Re-opening the roll that is mid-close: cancel the return leg (the
+      // canister flies back down from wherever it is) and let the strip
+      // unroll again. If it was only mid-roll-in, homing is false already.
+      setHoming(false);
+    }
+    // Otherwise a different roll is still closing — `current` catches up to
+    // `target` when its collapse completes below.
+  };
 
   // Bring the detail strip into view once it has unrolled (it sits below the
   // shelf, which may be off-screen when a roll is clicked).
   useEffect(() => {
-    if (!active) return;
+    if (!current) return;
     const t = setTimeout(() => {
       panelRef.current?.scrollIntoView({
         behavior: reduceMotion ? "auto" : "smooth",
@@ -350,7 +437,7 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
       });
     }, 380);
     return () => clearTimeout(t);
-  }, [active, reduceMotion]);
+  }, [current, reduceMotion]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const bounds = shelfRef.current?.getBoundingClientRect();
@@ -394,8 +481,9 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
                 key={collection.slug}
                 collection={collection}
                 index={i}
-                isActive={active === collection.slug}
-                onToggle={() => setActive((cur) => (cur === collection.slug ? null : collection.slug))}
+                isAway={current === collection.slug && !homing}
+                isOpen={target === collection.slug}
+                onToggle={() => handleToggle(collection.slug)}
               />
             ))}
           </div>
@@ -403,38 +491,50 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
         {/* Shelf line the rolls stand on */}
         <div className="h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent" aria-hidden />
 
-        {/* Detail area the clicked roll drops into and unrolls across */}
+        {/* Detail area the clicked roll drops into and unrolls across.
+            Deliberately NOT an AnimatePresence: the height is animated
+            directly and the content unmounted by hand once the collapse
+            finishes, so the canister always unmounts from a live tree and
+            its layoutId flight home actually animates (see file comment). */}
         <div id="photos-detail" ref={panelRef}>
-          <AnimatePresence initial={false}>
-            {activeCollection && (
-              <motion.div
-                key="panel"
-                initial={{ height: 0 }}
-                animate={{ height: "auto" }}
-                exit={{
-                  // Let the film roll back into the canister before the
-                  // vertical space collapses (and the roll flies home)
-                  height: 0,
-                  transition: { duration: reduceMotion ? 0 : 0.4, delay: reduceMotion ? 0 : 0.35, ease: [0.4, 0, 0.2, 1] },
-                }}
-                // Opens over roughly the flight's settle time so the space
-                // grows in step with the roll's descent
-                transition={{ duration: reduceMotion ? 0 : 0.55, ease: [0.25, 1, 0.36, 1] }}
-                // No overflow-hidden here: it would clip the canister mid-flight.
-                // The strip clips itself inside its own wrapper, so nothing
-                // spills visibly.
-              >
-                <div className="pt-6 md:pt-8 pb-2">
-                  <DetailStrip
-                    key={activeCollection.slug}
-                    collection={activeCollection}
-                    onClose={() => setActive(null)}
-                    reduceMotion={!!reduceMotion}
-                  />
-                </div>
-              </motion.div>
+          <motion.div
+            initial={false}
+            animate={{ height: panelOpen ? "auto" : 0 }}
+            // Opening grows over roughly the flight's settle time so the
+            // space tracks the roll's descent; the collapse runs while the
+            // canister flies home (the film is already rolled in by then).
+            transition={
+              panelOpen
+                ? { duration: reduceMotion ? 0 : 0.55, ease: [0.25, 1, 0.36, 1] }
+                : { duration: reduceMotion ? 0 : 0.4, ease: [0.4, 0, 0.2, 1] }
+            }
+            onAnimationComplete={(def) => {
+              // Collapse finished: clear the closed roll, or hand straight
+              // over to a pending switch (its roll then flies down off the
+              // shelf as this content swaps).
+              if (typeof def === "object" && def !== null && "height" in def && def.height === 0 && homing) {
+                setHoming(false);
+                setCurrent(target);
+              }
+            }}
+            // No overflow-hidden here: it would clip the canister mid-flight.
+            // The strip clips itself inside its own wrapper, so nothing
+            // spills visibly.
+          >
+            {shownCollection && (
+              <div className="pt-6 md:pt-8 pb-2">
+                <DetailStrip
+                  key={shownCollection.slug}
+                  collection={shownCollection}
+                  open={target === current && !homing}
+                  withCanister={!homing}
+                  onClose={() => setTarget(null)}
+                  onRolledIn={() => setHoming(true)}
+                  reduceMotion={!!reduceMotion}
+                />
+              </div>
             )}
-          </AnimatePresence>
+          </motion.div>
         </div>
 
         {/* Focus reticle trailing the cursor; turns amber and shrinks when it locks a roll */}

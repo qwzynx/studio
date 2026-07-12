@@ -3,63 +3,58 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-// Edit these to match the real story. Entries read newest-first, like a roll
-// rewinding — the last frame is where it all started. `MG 400` in the edge
-// code is a riff on film stock names; keep or change it.
-const roll = [
+// The career reads as a shooting script: a cream paper page (a deliberate
+// break from the site's dark chrome) set in Courier, with the years as
+// sluglines, CUT TO:s between chapters, and the roles pencilled into the
+// margins in the director's handwriting. Scenes run chronologically — the
+// script opens where the story did.
+//
+// Edit these to match the real story.
+const scenes = [
   {
-    period: "2024 — NOW",
-    title: "MG Studio",
-    org: "Freelance photographer & filmmaker",
-    description:
-      "Running a one-person studio end to end — scouting, shooting, editing and grading portraits, events and short films, for clients and for the love of it.",
-    roles: ["Photography", "Direction", "Colour"],
-  },
-  {
-    period: "2023 — 2024",
-    title: "Second Shooter",
-    org: "Weddings & live events",
-    description:
-      "Learned to read a room and anticipate the moment — covering the angles the lead couldn't, and turning around same-week selects.",
-    roles: ["Events", "Candid"],
-  },
-  {
-    period: "2021 — 2023",
-    title: "Editor for Hire",
-    org: "Creators & student films",
-    description:
-      "Cut recaps, travel diaries and shorts from other people's footage — where the taste for pacing, sound and grade was built.",
-    roles: ["Editing", "Grading"],
-  },
-  {
+    slug: "EXT. BACKYARD — GOLDEN HOUR",
     period: "2019",
-    title: "First Roll",
-    org: "A hand-me-down camera",
-    description:
-      "Shot everything that stood still and most things that didn't. Most frames were terrible. A few weren't — and that was enough.",
-    roles: ["The hook"],
+    intro: "A HAND-ME-DOWN CAMERA",
+    action:
+      "changes everything. Shot everything that stood still and most things that didn't. Most frames were terrible. A few weren't — and that was enough.",
+    scribble: "the hook!",
+  },
+  {
+    slug: "INT. BEDROOM EDIT BAY — 2 A.M.",
+    period: "2021 – 2023",
+    intro: "EDITOR FOR HIRE",
+    action:
+      "cutting recaps, travel diaries and shorts from other people's footage, for creators and student films — where the taste for pacing, sound and grade was built.",
+    scribble: "editing · grading",
+  },
+  {
+    slug: "INT. WEDDING VENUE — EVENING",
+    period: "2023 – 2024",
+    intro: "SECOND SHOOTER",
+    action:
+      "learns to read a room and anticipate the moment — covering the angles the lead couldn't, and turning around same-week selects.",
+    scribble: "events · candid",
+  },
+  {
+    slug: "INT. MG STUDIO — PRESENT DAY",
+    period: "2024 – now",
+    intro: "MG STUDIO",
+    action:
+      "a one-person operation running end to end — scouting, shooting, editing and grading portraits, events and short films, for clients and for the love of it.",
+    scribble: "photography · direction · colour",
   },
 ];
 
-// The frame-counter window at the top of the section — edit freely.
-const counters = [
-  { value: "07", label: "Years behind the lens" },
-  { value: "36+", label: "Shoots delivered" },
-  { value: "10K", label: "Frames kept" },
-];
+// Typed into the title block like production notes.
+const stats = "7 YEARS BEHIND THE LENS · 36+ SHOOTS DELIVERED · 10K FRAMES KEPT";
 
-/* Vertical sprocket strip that forms the timeline spine. Same geometry as the
-   Films strips: --sprocket-step = one hole height + gap, so the hover-driven
-   film-transport loop is seamless. */
-function SprocketSpine() {
+// A brass brad holding the page together, screenplay-style.
+function Brad({ className }: { className: string }) {
   return (
-    <div className="relative overflow-hidden flex-1 w-2.5 md:w-3 [--sprocket-step:1.5rem] md:[--sprocket-step:1.75rem]">
-      <div className="film-transport absolute inset-x-0 top-0 flex flex-col gap-3">
-        {Array.from({ length: 40 }).map((_, i) => (
-          <div key={i} className="w-2.5 h-3 md:w-3 md:h-4 rounded-[3px] bg-background border border-white/15 shrink-0" />
-        ))}
-      </div>
-    </div>
+    <span
+      aria-hidden
+      className={`absolute left-4 md:left-6 h-3 w-3 rounded-full bg-linear-to-br from-[#d3b168] to-[#8a6a2d] shadow-[0_1px_2px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.5)] ${className}`}
+    />
   );
 }
 
@@ -79,81 +74,107 @@ export default function Experience({ hideTitle = false }: { hideTitle?: boolean 
         <p className="text-amber-400 mt-4 text-sm md:text-base italic font-semibold tracking-widest uppercase text-left">The reel so far</p>
       </motion.div>
 
-      {/* Frame counter — reads like the exposure counter window on a camera */}
-      <div className="w-full max-w-xl grid grid-cols-3 gap-3 md:gap-4 mb-10 md:mb-14">
-        {counters.map((counter, index) => (
-          <motion.div
-            key={counter.label}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: index * 0.08 }}
-            className="rounded-2xl bg-white/[0.02] border border-white/10 p-3 md:p-4 flex flex-col items-center gap-2"
-          >
-            <span className="px-3 py-1 rounded-md bg-black/60 border border-white/15 font-mono text-amber-300 text-lg md:text-2xl tracking-[0.2em]">
-              {counter.value}
-            </span>
-            <span className="text-gray-500 text-[9px] md:text-[10px] uppercase tracking-[0.25em] font-bold text-center leading-relaxed">
-              {counter.label}
-            </span>
-          </motion.div>
-        ))}
-      </div>
+      {/* The page */}
+      <motion.div
+        initial={{ opacity: 0, y: 50 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+        transition={{ duration: 0.8 }}
+        className="screenplay-page relative mx-auto w-full max-w-3xl overflow-hidden rounded-[3px] bg-[#f3ecda] px-8 py-10 text-stone-800 shadow-[0_40px_90px_-25px_rgba(0,0,0,0.85)] sm:px-12 md:px-16 md:py-14"
+      >
+        {/* Aged-paper vignette + coffee ring */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 shadow-[inset_0_0_90px_rgba(120,90,20,0.18)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-20 right-8 h-24 w-24 rounded-full border-[5px] border-amber-900/[0.09]"
+        />
 
-      {/* The roll — each entry is one frame; sprockets roll while hovered */}
-      <div className="w-full flex flex-col">
-        {roll.map((entry, index) => {
-          const frame = `${String(roll.length - index).padStart(2, "0")}A`;
-          return (
-            <article key={entry.title} className="group relative flex gap-4 md:gap-6 items-stretch">
-              {/* Timeline spine: frame number chip + sprocket strip down to the next frame */}
-              <div className="flex flex-col items-center shrink-0 w-10 md:w-12">
-                <div className="w-10 h-8 md:w-11 md:h-9 rounded-md bg-black/50 border border-white/15 group-hover:border-amber-400/60 flex items-center justify-center font-mono text-[10px] md:text-xs text-amber-300 tracking-widest transition-colors duration-500 mb-2 shrink-0">
-                  {frame}
-                </div>
-                <SprocketSpine />
-              </div>
+        <Brad className="top-14" />
+        <Brad className="bottom-14" />
 
-              <motion.div
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "0px 0px -10% 0px" }}
-                transition={{ duration: 0.7, delay: 0.1 }}
-                className="relative overflow-hidden flex-1 min-w-0 rounded-2xl bg-white/[0.02] border border-white/10 group-hover:border-amber-400/40 p-4 md:p-6 mb-6 md:mb-8 transition-colors duration-500"
-              >
-                {/* Warm light leak sweeps across the frame once per hover */}
-                <div className="light-leak absolute -top-1/4 -bottom-1/4 w-1/2 bg-linear-to-r from-transparent via-amber-200/25 to-transparent pointer-events-none" />
-
-                <div className="flex items-center justify-between gap-3">
-                  <span className="font-mono text-amber-300 text-[11px] md:text-xs tracking-[0.25em]">{entry.period}</span>
-                  <span className="font-mono text-gray-600 text-[9px] md:text-[10px] tracking-[0.3em] uppercase hidden sm:block">
-                    MG 400 · {frame}
-                  </span>
-                </div>
-                <h3 className="text-lg md:text-2xl font-bold tracking-tight text-white group-hover:text-amber-300 transition-colors duration-300 mt-2">
-                  {entry.title}
-                </h3>
-                <p className="text-gray-500 text-xs md:text-sm font-mono mt-0.5">{entry.org}</p>
-                <p className="text-gray-400 text-xs md:text-base leading-relaxed mt-2 md:mt-3">{entry.description}</p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {entry.roles.map((role) => (
-                    <span
-                      key={role}
-                      className="px-2.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-[0.15em] text-amber-300/90 bg-amber-500/10 border border-amber-500/20"
-                    >
-                      {role}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            </article>
-          );
-        })}
-
-        <p className="w-full text-center font-mono text-[10px] tracking-[0.4em] text-gray-600 uppercase mt-1">
-          — start of roll —
+        {/* Page number */}
+        <p aria-hidden className="absolute right-6 top-4 text-xs text-stone-500 md:right-10">
+          1.
         </p>
-      </div>
+
+        {/* Title block */}
+        <div className="mb-10 flex flex-col items-center gap-2 text-center md:mb-12">
+          <h3 className="text-xl font-bold tracking-widest md:text-2xl">
+            <span className="border-b-2 border-stone-800 pb-0.5">THE REEL SO FAR</span>
+          </h3>
+          <p className="mt-3 text-xs md:text-sm">written, shot &amp; graded by</p>
+          <p className="text-sm font-bold tracking-widest md:text-base">MAHAN GHAFARIAN</p>
+          <p className="mt-3 text-[10px] font-bold tracking-[0.2em] text-amber-700 md:text-xs">
+            GOLDENROD REVISION · JUL 2026
+          </p>
+          <p className="mt-1 text-[9px] tracking-wider text-stone-500 md:text-[11px]">{stats}</p>
+        </div>
+
+        <p className="mb-8 text-sm font-bold md:text-base">FADE IN:</p>
+
+        {/* Scenes */}
+        <div className="flex flex-col gap-8 md:gap-10">
+          {scenes.map((scene, index) => (
+            <motion.div
+              key={scene.slug}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "0px 0px -8% 0px" }}
+              transition={{ duration: 0.5, delay: 0.05 }}
+              className="group"
+            >
+              {index > 0 && (
+                <p className="mb-8 text-right text-sm font-bold md:mb-10 md:text-base">CUT TO:</p>
+              )}
+
+              <div className="relative">
+                {/* Slugline with scene numbers in both margins */}
+                <div className="flex items-baseline gap-3 md:gap-5">
+                  <span className="text-sm font-bold md:text-base">{index + 1}</span>
+                  <h4 className="min-w-0 flex-1 text-sm font-bold uppercase leading-snug tracking-wide md:text-base">
+                    {scene.slug}{" "}
+                    <span className="whitespace-nowrap">({scene.period})</span>
+                  </h4>
+                  <span className="hidden text-sm font-bold sm:inline md:text-base">{index + 1}</span>
+                </div>
+                {/* Pencilled underline appears when the scene is read */}
+                <div className="ml-6 mt-0.5 h-0.5 w-0 bg-amber-600/50 transition-all duration-500 group-hover:w-40 md:ml-8" aria-hidden />
+
+                {/* Director's margin scribble */}
+                <p className="pointer-events-none absolute -top-5 right-0 -rotate-3 font-scribble text-lg text-amber-700/80 transition-all duration-300 group-hover:-rotate-6 group-hover:scale-110 group-hover:text-amber-700 md:-top-6 md:text-2xl">
+                  {scene.scribble}
+                </p>
+
+                <p className="mt-3 pl-6 text-[13px] leading-relaxed md:pl-8 md:text-[15px] md:leading-loose">
+                  <span className="font-bold">{scene.intro}</span> — {scene.action}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Ending */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mt-10 md:mt-12"
+        >
+          <p className="text-right text-sm font-bold md:text-base">FADE OUT.</p>
+          <p className="mt-8 text-center text-sm font-bold tracking-[0.3em] md:text-base">THE END</p>
+          <p className="mt-1 rotate-[-2deg] text-center font-scribble text-xl text-amber-700/80 md:text-2xl">
+            (to be continued…)
+          </p>
+        </motion.div>
+
+        <p className="mt-10 text-center text-[8px] tracking-[0.2em] text-stone-500 md:text-[9px]">
+          MG STUDIO · THIS MATERIAL IS THE PROPERTY OF THE FILMMAKER · DO NOT DUPLICATE
+        </p>
+      </motion.div>
     </section>
   );
 }

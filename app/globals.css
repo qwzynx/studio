@@ -10,6 +10,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), sans-serif;
   --font-heading: var(--font-inter-tight), sans-serif;
+  /* Experience section: screenplay body + handwritten margin notes */
+  --font-screenplay: var(--font-courier), "Courier New", monospace;
+  --font-scribble: var(--font-caveat), cursive;
 }
 
 .dark {
@@ -106,22 +109,6 @@ body {
   animation: light-leak 1.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Sprocket strip rolls like film through a projector; plays while the card is hovered.
-   --sprocket-step must equal one hole height + gap so the loop is seamless. */
-@keyframes film-transport {
-  from { transform: translateY(0); }
-  to { transform: translateY(calc(-1 * var(--sprocket-step, 1.5rem))); }
-}
-
-.film-transport {
-  animation: film-transport 0.4s linear infinite;
-  animation-play-state: paused;
-}
-
-.group:hover .film-transport {
-  animation-play-state: running;
-}
-
 /* Horizontal film feed — sprocket holes crawl sideways while a category
    strip is rolled out, as if the canister keeps feeding film.
    --sprocket-step-x must equal one hole width + gap for a seamless loop. */
@@ -139,19 +126,7 @@ body {
   animation-play-state: running;
 }
 
-/* Playback scrub bar on video cards — fills across the frame while the card
-   is hovered, like a preview scrubbing through the clip. */
-.scrub-fill {
-  width: 0;
-  transition: width 0.3s ease-out;
-}
-
-.group:hover .scrub-fill {
-  width: 100%;
-  transition: width 6s linear;
-}
-
-/* Faint CRT scanlines laid over a video frame on hover */
+/* Faint CRT scanlines laid over the program monitor in the Videos edit bay */
 .scanlines {
   background: repeating-linear-gradient(
     to bottom,
@@ -196,18 +171,12 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .light-leak,
-  .film-transport,
   .film-transport-x,
   .animate-float,
   .animate-float-subtle,
   .animate-glow-pulse,
   .animate-rec-blink {
     animation: none;
-  }
-
-  .scrub-fill,
-  .group:hover .scrub-fill {
-    transition: none;
   }
 }
 
@@ -226,6 +195,14 @@ body {
 h1, h2, h3, h4, h5 {
   font-family: var(--font-inter-tight), sans-serif;
   font-weight: 700;
+}
+
+/* The Experience screenplay page: everything on the paper is set in Courier,
+   including headings. Unlayered on purpose — the h1–h5 rule above is
+   unlayered too, so a layered utility could never override it. */
+.screenplay-page,
+.screenplay-page :is(h1, h2, h3, h4, h5) {
+  font-family: var(--font-screenplay);
 }
 
 h1 {

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Inter_Tight } from "next/font/google";
+import { Inter, Inter_Tight, Courier_Prime, Caveat } from "next/font/google";
 import Navbar from "./components/navbar";
 import Letterbox from "./components/letterbox";
 import "./globals.css";
@@ -12,6 +12,20 @@ const interTight = Inter_Tight({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+});
+
+// Screenplay faces for the Experience section: Courier Prime is the standard
+// script typeface; Caveat plays the director's pencil scribbles in the margins.
+const courierPrime = Courier_Prime({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-courier",
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-caveat",
 });
 
 export const viewport: Viewport = {
@@ -109,7 +123,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${interTight.variable} ${inter.variable} h-full antialiased dark scroll-smooth snap-y snap-proximity`}
+      className={`${interTight.variable} ${inter.variable} ${courierPrime.variable} ${caveat.variable} h-full antialiased dark scroll-smooth snap-y snap-proximity`}
     >
       <head>
         <script
