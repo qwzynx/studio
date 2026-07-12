@@ -10,10 +10,12 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(false);
 
     try {
       const response = await fetch("https://formsubmit.co/ajax/mahan207gh@gmail.com", {
@@ -39,10 +41,11 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
           setMessage("");
         }, 3000);
       } else {
-        console.error("Form submission failed");
+        setError(true);
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
+    } catch {
+      // Kept fields intact — the visible error below invites a retry.
+      setError(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -205,6 +208,18 @@ export default function Contact({ hideTitle = false }: { hideTitle?: boolean }) 
                   </>
                 )}
               </button>
+
+              {/* Delivery failure readout — camera-error style, keeps the
+                  typed message intact so a retry costs nothing */}
+              {error && (
+                <p
+                  role="alert"
+                  className="text-center font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-red-400"
+                >
+                  <span className="mr-2 inline-block h-1.5 w-1.5 rounded-full bg-red-500 animate-rec-blink align-middle" aria-hidden />
+                  transmission failed — try again or email directly
+                </p>
+              )}
             </form>
           </div>
         </div>

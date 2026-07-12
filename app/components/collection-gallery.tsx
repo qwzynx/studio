@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ChevronLeft, ChevronRight, X } from "lucide-react";
-import type { Collection, CollectionPhoto } from "../lib/collections";
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { collections, type Collection, type CollectionPhoto } from "../lib/collections";
 
 // The cascade next to the header: a couple of frames per row, each row growing
 // and stepping further in from the right edge until it hands off to the
@@ -143,6 +143,22 @@ export default function CollectionGallery({ collection }: { collection: Collecti
   }, [lightboxIndex, close, step]);
 
   const selected = lightboxIndex === null ? null : collection.photos[lightboxIndex];
+  // The frames flanking the open one — mounted invisibly in the lightbox so
+  // stepping (or swiping) lands on an already-decoded image, not a black gap.
+  const neighbours =
+    lightboxIndex === null
+      ? []
+      : [-1, 1].map(
+          (d) =>
+            collection.photos[
+              (lightboxIndex + d + collection.photos.length) % collection.photos.length
+            ]
+        );
+
+  // Roll-to-roll navigation along the shelf order, wrapping at the ends.
+  const rollIndex = collections.findIndex((c) => c.slug === collection.slug);
+  const prevRoll = collections[(rollIndex - 1 + collections.length) % collections.length];
+  const nextRoll = collections[(rollIndex + 1) % collections.length];
 
   return (
     <div className="w-full max-w-7xl mx-auto px-6 md:px-16 pt-24 md:pt-28 pb-28 md:pb-36 relative z-10">
@@ -236,6 +252,56 @@ export default function CollectionGallery({ collection }: { collection: Collecti
         ))}
       </div>
 
+      {/* Shelf navigation — step to the neighbouring rolls or back to the
+          full archive, so a roll never dead-ends */}
+      <nav
+        aria-label="Other collections"
+        className="mt-14 flex items-center justify-between gap-4 border-t border-white/10 pt-6 md:mt-20 md:pt-8"
+      >
+        <Link
+          href={`/photos/${prevRoll.slug}`}
+          className="group flex min-w-0 items-center gap-2 text-left"
+        >
+          <ArrowLeft
+            size={14}
+            className="flex-none text-gray-600 transition-all duration-300 group-hover:-translate-x-1 group-hover:text-amber-400"
+          />
+          <span className="min-w-0">
+            <span className="block font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-gray-600 md:text-[9px]">
+              previous roll
+            </span>
+            <span className="block truncate text-sm font-bold tracking-tight text-gray-300 transition-colors duration-300 group-hover:text-amber-300 md:text-base">
+              {prevRoll.name}
+            </span>
+          </span>
+        </Link>
+
+        <Link
+          href="/photos"
+          className="hidden flex-none rounded-full border border-white/10 px-5 py-2 font-mono text-[9px] font-bold uppercase tracking-[0.25em] text-gray-400 transition-all duration-300 hover:border-amber-400/50 hover:text-amber-400 sm:block md:text-[10px]"
+        >
+          the archive
+        </Link>
+
+        <Link
+          href={`/photos/${nextRoll.slug}`}
+          className="group flex min-w-0 items-center gap-2 text-right"
+        >
+          <span className="min-w-0">
+            <span className="block font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-gray-600 md:text-[9px]">
+              next roll
+            </span>
+            <span className="block truncate text-sm font-bold tracking-tight text-gray-300 transition-colors duration-300 group-hover:text-amber-300 md:text-base">
+              {nextRoll.name}
+            </span>
+          </span>
+          <ArrowRight
+            size={14}
+            className="flex-none text-gray-600 transition-all duration-300 group-hover:translate-x-1 group-hover:text-amber-400"
+          />
+        </Link>
+      </nav>
+
       {/* Fullscreen viewer — portaled to <body> so the page wrapper's stacking
           context can't trap it under the fixed navbar */}
       {typeof document !== "undefined" &&
@@ -281,13 +347,24 @@ export default function CollectionGallery({ collection }: { collection: Collecti
               <ChevronRight size={36} />
             </button>
 
-            {/* Each frame opens like an aperture iris */}
+            {/* Each frame opens like an aperture iris. Dragging sideways
+                advances the roll — swipe left for the next frame, right for
+                the previous; the elastic constraints snap the print back if
+                the pull doesn't clear the threshold. */}
             <motion.div
               key={selected.src}
               initial={reduceMotion ? { opacity: 0 } : { clipPath: "circle(0% at 50% 50%)", opacity: 0.6 }}
               animate={{ clipPath: "circle(100% at 50% 50%)", opacity: 1 }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="relative flex-1 m-6 md:m-12 mb-0"
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={0.15}
+              onDragEnd={(_, info) => {
+                const pull = info.offset.x + info.velocity.x * 0.2;
+                if (pull < -80) step(1);
+                else if (pull > 80) step(-1);
+              }}
+              className="relative flex-1 m-6 md:m-12 mb-0 touch-pan-y"
               onClick={(e) => e.stopPropagation()}
             >
               <Image
@@ -298,6 +375,20 @@ export default function CollectionGallery({ collection }: { collection: Collecti
                 className="object-contain"
                 loading="eager"
               />
+              {/* Invisible neighbours, already decoded for the next step */}
+              <div className="pointer-events-none absolute inset-0 opacity-0" aria-hidden>
+                {neighbours.map((photo) => (
+                  <Image
+                    key={photo.src}
+                    src={photo.src}
+                    alt=""
+                    fill
+                    sizes="100vw"
+                    className="object-contain"
+                    loading="eager"
+                  />
+                ))}
+              </div>
               {/* Viewfinder corner brackets framing the stage */}
               <span className="absolute top-0 left-0 w-6 h-6 md:w-10 md:h-10 border-t-2 border-l-2 border-white/25 pointer-events-none" aria-hidden />
               <span className="absolute top-0 right-0 w-6 h-6 md:w-10 md:h-10 border-t-2 border-r-2 border-white/25 pointer-events-none" aria-hidden />

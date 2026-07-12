@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="w-full border-t border-white/5 mt-8 md:mt-0">
       <div className="max-w-7xl mx-auto px-6 md:px-16 py-8 pb-24 md:pb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-gray-500 text-sm">
-          © 2026 Mahan Ghafarian ·{" "}
+          © {new Date().getFullYear()} Mahan Ghafarian ·{" "}
           <a href="https://mahanghafarian.com" className="hover:text-amber-400 transition-colors duration-300">
             engineering portfolio →
           </a>

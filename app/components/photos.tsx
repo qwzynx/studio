@@ -671,6 +671,22 @@ export default function Photos({ hideTitle = false }: { hideTitle?: boolean }) {
           </motion.div>
         </div>
 
+        {/* Quiet hand-off to the archive page, where every roll is filed */}
+        <div className="mt-4 flex w-full justify-end">
+          <Link
+            href="/photos"
+            className="group inline-flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-gray-600 transition-colors duration-300 hover:text-amber-400 md:text-[10px]"
+          >
+            browse the full archive
+            <span
+              aria-hidden
+              className="inline-block transition-transform duration-300 group-hover:translate-x-1"
+            >
+              →
+            </span>
+          </Link>
+        </div>
+
         {/* Focus reticle trailing the cursor; turns amber and shrinks when it locks a roll */}
         {!reduceMotion && (
           <motion.div

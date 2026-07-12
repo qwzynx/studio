@@ -10,6 +10,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly',
       priority: 1,
     },
+    {
+      url: `${baseUrl}/photos`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.9,
+    },
     ...collections.map((collection) => ({
       url: `${baseUrl}/photos/${collection.slug}`,
       lastModified: new Date(),
