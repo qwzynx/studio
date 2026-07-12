@@ -1,313 +1,280 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
-// The career hangs as a FILMOGRAPHY: a cinema corridor of one-sheet posters,
-// each chapter of the story sold as its own feature film — festival laurels,
-// a tagline, a billing block of micro-credits, and a plaque underneath with
-// what actually happened. The current chapter runs under a NOW PLAYING
-// marquee; a torn ticket stub at the bottom carries the career stats.
+// RACK FOCUS — the career as one manual prime lens. Every chapter is
+// engraved on the focus ring at the distance it happened: 2019 sits at the
+// lens's minimum focus distance, and the current chapter is out at infinity,
+// still rolling. Clicking a chapter (card or engraving) pulls focus — the
+// ring slides its marking under the fixed amber index line, the chosen card
+// snaps sharp, and every other chapter falls optically out of focus. The
+// green AF-confirm brackets echo the hero's viewfinder HUD.
 //
-// Edit these to match the real story.
-type Feature = {
+// Edit these to match the real story. `m`/`ft` are the barrel engravings.
+type Chapter = {
   id: string;
-  title: string[];
-  year: string;
-  genre: string;
-  tagline: string;
-  festival: string;
-  synopsis: string;
-  roles: string[];
-  credits: string;
-  tilt: string;
-  nowPlaying?: boolean;
+  m: string; // metres row on the focus ring
+  ft: string; // feet row, amber like a real barrel
+  years: string;
+  title: string;
+  description: string;
+  details: string[];
 };
 
-const features: Feature[] = [
+const chapters: Chapter[] = [
   {
     id: "origin",
-    title: ["THE HAND-ME-DOWN", "CAMERA"],
-    year: "2019",
-    genre: "Origin story",
-    tagline: "Every story needs a first frame.",
-    festival: "BACKYARD FILM FESTIVAL",
-    synopsis:
-      "A hand-me-down camera changes everything. Shot everything that stood still and most things that didn't — most frames were terrible, a few weren't, and that was enough.",
-    roles: ["first camera", "golden hour"],
-    credits:
-      "MG STUDIO PRESENTS A GOLDEN-HOUR PRODUCTION “THE HAND-ME-DOWN CAMERA” STARRING ONE BORROWED BODY AND A KIT LENS · SHOT ENTIRELY ON AUTO · NO TRIPOD WAS HARMED",
-    tilt: "lg:-rotate-1",
+    m: "0.45",
+    ft: "1.5",
+    years: "2019",
+    title: "First Light",
+    description:
+      "A hand-me-down camera changes everything. Shot everything that stood still and most things that didn't — on full auto, and thrilled about it.",
+    details: ["one borrowed body", "zero settings touched"],
   },
   {
     id: "editor",
-    title: ["EDITOR", "FOR HIRE"],
-    year: "2021 – 2023",
-    genre: "Workplace thriller",
-    tagline: "Other people's footage. His pacing.",
-    festival: "2 A.M. RENDER CLUB",
-    synopsis:
-      "Cutting recaps, travel diaries and shorts from other people's footage, for creators and student films — where the taste for pacing, sound and grade was built.",
-    roles: ["editing", "grading"],
-    credits:
-      "MG STUDIO PRESENTS “EDITOR FOR HIRE” FEATURING NINETY-MINUTE EXPORTS AND ONE VERY TIRED LAPTOP · TIMELINE BY TRIAL AND ERROR · SLEEP APPEARS COURTESY OF NOBODY",
-    tilt: "lg:rotate-[0.75deg]",
+    m: "1.2",
+    ft: "4",
+    years: "2021 – 2023",
+    title: "Editor for Hire",
+    description:
+      "Cutting other people's footage at 2 a.m. — recaps, travel diaries, student films. Where the taste for pacing, sound and grade was built.",
+    details: ["other people's footage", "overnight exports"],
   },
   {
     id: "second-shooter",
-    title: ["SECOND", "SHOOTER"],
-    year: "2023 – 2024",
-    genre: "Romantic epic",
-    tagline: "One step ahead of the moment.",
-    festival: "GRAND BALLROOM CIRCUIT",
-    synopsis:
-      "Weddings and live events taught the craft of reading a room — covering the angles the lead couldn't, and turning around same-week selects.",
-    roles: ["events", "candid"],
-    credits:
-      "MG STUDIO PRESENTS “SECOND SHOOTER” WITH A CAST OF THREE HUNDRED GUESTS · CATERING NOT INCLUDED · FILMED ON LOCATION AT SOMEBODY ELSE'S BIG DAY",
-    tilt: "lg:-rotate-[0.75deg]",
+    m: "3",
+    ft: "10",
+    years: "2023 – 2024",
+    title: "Second Shooter",
+    description:
+      "Weddings and live events: three hundred guests, no second takes. Learned to read a room and be one step ahead of the moment.",
+    details: ["live events", "no second takes"],
   },
   {
     id: "mg-studio",
-    title: ["MG", "STUDIO"],
-    year: "2024 – NOW",
-    genre: "Feature presentation",
-    tagline: "Written, shot & graded end to end.",
-    festival: "IN THEATRES EVERYWHERE",
-    synopsis:
-      "A one-person operation running end to end — scouting, shooting, editing and grading portraits, events and short films, for clients and for the love of it.",
-    roles: ["photography", "direction", "colour"],
-    credits:
-      "MG STUDIO PRESENTS A MAHAN GHAFARIAN PICTURE “MG STUDIO” WRITTEN SHOT EDITED GRADED AND DELIVERED BY THE SAME PAIR OF HANDS · SEQUEL IN PRODUCTION",
-    tilt: "lg:rotate-1",
-    nowPlaying: true,
+    m: "∞",
+    ft: "∞",
+    years: "2024 – now",
+    title: "MG Studio",
+    description:
+      "A one-person operation running end to end — written, shot, edited and graded by the same pair of hands. Portraits, events, short films.",
+    details: ["end to end", "still shooting"],
   },
 ];
 
-// Punched on the ticket stub under the poster wall.
-const stats = ["7 years behind the lens", "36+ shoots delivered", "10k frames kept"];
+// Barrel engraving along the panel's bottom edge.
+const stats = ["7 yrs behind the lens", "36+ shoots delivered", "10k frames kept"];
 
-// One branch of a festival laurel — mirrored with `flip` for the right side.
-function Laurel({ flip = false }: { flip?: boolean }) {
-  const leaves = [
-    { x: 10.5, y: 36, r: -68 },
-    { x: 7.5, y: 30.5, r: -52 },
-    { x: 5.6, y: 24.5, r: -34 },
-    { x: 5.0, y: 18.5, r: -16 },
-    { x: 5.8, y: 12.5, r: 4 },
-    { x: 8.0, y: 7.2, r: 26 },
-    { x: 11.4, y: 3.2, r: 48 },
-  ];
+// One engraving cell on the sliding ring. Keep in sync with RING_STEP.
+const RING_STEP = 132;
+
+// Gentle settling spring — the ring should land like a hand easing off a
+// focus pull, not snap like a UI tab.
+const ringSpring = { type: "spring", stiffness: 160, damping: 24 } as const;
+
+function Ticks({ dim = false }: { dim?: boolean }) {
   return (
-    <svg
-      viewBox="0 0 16 40"
+    <div
+      className="pointer-events-none absolute inset-x-0 bottom-2 flex items-end justify-between"
       aria-hidden
-      className={`h-8 w-3.5 text-amber-200/70 transition-colors duration-500 group-hover:text-amber-300 ${
-        flip ? "-scale-x-100" : ""
-      }`}
     >
-      <path
-        d="M13 39 C5.5 32 3.5 21 8.5 10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="0.9"
-        opacity="0.7"
-      />
-      {leaves.map((leaf, i) => (
-        <ellipse
+      {Array.from({ length: 9 }).map((_, i) => (
+        <span
           key={i}
-          cx={leaf.x}
-          cy={leaf.y}
-          rx="1.7"
-          ry="3.6"
-          fill="currentColor"
-          transform={`rotate(${leaf.r} ${leaf.x} ${leaf.y})`}
+          className={`w-px ${
+            i === 4
+              ? `h-2.5 ${dim ? "bg-white/15" : "bg-white/50"}`
+              : `h-1.5 ${dim ? "bg-white/[0.07]" : "bg-white/20"}`
+          }`}
         />
       ))}
-    </svg>
+    </div>
   );
 }
 
-// The key art behind each poster's type — pure CSS, one scene per chapter.
-function PosterArt({ id }: { id: string }) {
-  switch (id) {
-    case "origin":
-      // Golden hour: a low sun sinking behind a dark horizon.
-      return (
-        <div className="absolute inset-0 bg-linear-to-b from-[#331a04] via-[#59290a] to-[#120a04]">
-          <div className="absolute left-1/2 top-[30%] h-36 w-36 -translate-x-1/2 rounded-full bg-linear-to-b from-amber-200 via-amber-400 to-orange-700 opacity-90 blur-[2px]" />
-          <div className="absolute left-1/2 top-[30%] h-36 w-36 -translate-x-1/2 rounded-full bg-amber-300/40 blur-2xl" />
-          <div className="absolute inset-x-0 top-[52%] bottom-0 bg-linear-to-b from-[#1a0e04] to-black" />
-          <div className="absolute inset-x-4 top-[52%] h-px bg-amber-200/50" />
+// The focus ring: a knurled barrel with the distance window in the middle.
+// The scale slides so the selected chapter's engraving sits under the fixed
+// index line; a faint sub-MFD mark and a hard stop past infinity bookend it.
+function FocusRing({
+  selected,
+  onSelect,
+}: {
+  selected: number;
+  onSelect: (i: number) => void;
+}) {
+  const reduce = useReducedMotion();
+  const knurl = {
+    backgroundImage:
+      "repeating-linear-gradient(90deg, rgba(255,255,255,0.07) 0 2px, transparent 2px 7px)",
+  };
+
+  return (
+    <div className="relative h-20 overflow-hidden border-b border-white/10 bg-[#0c0c0b]">
+      {/* Knurled grip strips top and bottom */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-2" style={knurl} aria-hidden />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1.5" style={knurl} aria-hidden />
+
+      {/* The sliding scale — anchored at the window's centre, offset per selection */}
+      <motion.div
+        className="absolute inset-y-0 left-1/2 flex"
+        initial={false}
+        animate={{ x: -((selected + 1) * RING_STEP + RING_STEP / 2) }}
+        transition={reduce ? { duration: 0 } : ringSpring}
+      >
+        {/* Below minimum focus distance — engraved, unreachable */}
+        <div
+          className="relative flex h-full w-[132px] flex-none items-center justify-center pb-3"
+          aria-hidden
+        >
+          <span className="font-mono text-sm font-bold text-white/15">0.3</span>
+          <Ticks dim />
         </div>
-      );
-    case "editor":
-      // The 2 a.m. edit bay: a lone monitor glowing in a dark blue room.
-      return (
-        <div className="absolute inset-0 bg-linear-to-b from-[#050a1c] via-[#0a1330] to-[#03050e]">
-          <div className="absolute left-1/2 top-[26%] h-24 w-36 -translate-x-1/2 rounded-sm border border-sky-300/40 bg-sky-400/15 shadow-[0_0_50px_rgba(56,189,248,0.35)]">
-            <div className="scanlines absolute inset-0" />
-            <div className="absolute inset-x-2 bottom-2 flex gap-1" aria-hidden>
-              <span className="h-1.5 flex-[3] rounded-full bg-sky-300/50" />
-              <span className="h-1.5 flex-[2] rounded-full bg-sky-300/30" />
-              <span className="h-1.5 flex-[4] rounded-full bg-sky-300/40" />
-            </div>
-            <span className="absolute right-1.5 top-1 font-mono text-[8px] font-bold tracking-widest text-sky-200/80">
-              02:00
-            </span>
-          </div>
-          <div className="absolute left-1/2 top-[47%] h-10 w-52 -translate-x-1/2 bg-sky-400/10 blur-xl" />
-        </div>
-      );
-    case "second-shooter":
-      // The venue: warm bokeh floating over an evening ballroom.
-      return (
-        <div className="absolute inset-0 bg-linear-to-b from-[#1d0b10] via-[#2e1414] to-[#0d0507]">
-          {[
-            "left-[12%] top-[16%] h-10 w-10 bg-amber-300/45",
-            "left-[62%] top-[10%] h-14 w-14 bg-rose-300/35",
-            "left-[38%] top-[30%] h-7 w-7 bg-amber-200/50",
-            "left-[78%] top-[34%] h-9 w-9 bg-orange-300/40",
-            "left-[18%] top-[42%] h-12 w-12 bg-rose-200/30",
-            "left-[55%] top-[46%] h-6 w-6 bg-amber-300/45",
-          ].map((pos) => (
-            <span key={pos} className={`absolute rounded-full blur-md ${pos}`} aria-hidden />
-          ))}
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-black to-transparent" />
-        </div>
-      );
-    default:
-      // The studio: a single spotlight cone landing on the monogram.
-      return (
-        <div className="absolute inset-0 bg-linear-to-b from-[#151310] to-black">
-          <div
-            className="absolute left-1/2 top-0 h-[68%] w-[135%] -translate-x-1/2 bg-linear-to-b from-amber-100/25 via-amber-200/10 to-transparent"
-            style={{ clipPath: "polygon(46% 0, 54% 0, 100% 100%, 0 100%)" }}
-          />
-          <p
-            aria-hidden
-            className="absolute left-1/2 top-[34%] -translate-x-1/2 font-heading text-7xl font-black tracking-tighter text-amber-100/90 drop-shadow-[0_0_25px_rgba(251,191,36,0.35)]"
+
+        {chapters.map((chapter, i) => (
+          <button
+            key={chapter.id}
+            type="button"
+            onClick={() => onSelect(i)}
+            aria-label={`Pull focus to ${chapter.title} (${chapter.years})`}
+            aria-pressed={selected === i}
+            className="group relative flex h-full w-[132px] flex-none flex-col items-center justify-center pb-3 outline-none focus-visible:bg-white/5"
           >
-            MG
-          </p>
-          <div className="absolute left-1/2 top-[56%] h-2 w-40 -translate-x-1/2 rounded-[100%] bg-amber-200/20 blur-sm" />
+            <span
+              className={`font-mono text-base font-bold tracking-wider transition-colors duration-300 ${
+                selected === i ? "text-amber-300" : "text-white/60 group-hover:text-white"
+              }`}
+            >
+              {chapter.m}
+            </span>
+            <span className="font-mono text-[9px] font-bold tracking-widest text-amber-400/50">
+              {chapter.ft} ft
+            </span>
+            <span className="mt-0.5 font-mono text-[8px] uppercase tracking-[0.2em] text-white/35">
+              {chapter.years}
+            </span>
+            <Ticks />
+          </button>
+        ))}
+
+        {/* Hard stop past infinity — the barrel ends here */}
+        <div className="relative h-full w-[132px] flex-none" aria-hidden>
+          <span className="absolute bottom-3 left-8 top-3 w-0.5 rounded bg-red-500/50" />
+          <Ticks dim />
         </div>
-      );
-  }
+      </motion.div>
+
+      {/* Window edge fades */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-14 bg-linear-to-r from-[#0c0c0b] to-transparent md:w-28" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-linear-to-l from-[#0c0c0b] to-transparent md:w-28" />
+
+      {/* Fixed index line the ring turns under */}
+      <div
+        className="pointer-events-none absolute inset-y-0 left-1/2 z-10 w-px -translate-x-1/2 bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]"
+        aria-hidden
+      >
+        <span className="absolute left-1/2 top-0 -translate-x-1/2 border-x-[5px] border-t-[6px] border-x-transparent border-t-amber-400" />
+      </div>
+    </div>
+  );
 }
 
-function Poster({ feature, index }: { feature: Feature; index: number }) {
+function ChapterCard({
+  chapter,
+  index,
+  selected,
+  onSelect,
+}: {
+  chapter: Chapter;
+  index: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
   return (
-    <motion.article
-      initial={{ opacity: 0, y: 40 }}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "0px 0px -8% 0px" }}
-      transition={{ duration: 0.6, delay: index * 0.09 }}
-      className="group relative"
+      transition={{ duration: 0.5, delay: index * 0.07 }}
+      className="h-full"
     >
-      {/* Marquee tag on the current feature */}
-      {feature.nowPlaying && (
-        <div className="absolute -top-3 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full bg-amber-400 px-3 py-1 shadow-[0_0_20px_rgba(245,158,11,0.5)]">
-          <span className="h-1.5 w-1.5 rounded-full bg-red-600 animate-rec-blink" aria-hidden />
-          <span className="font-mono text-[9px] font-black uppercase tracking-[0.25em] text-black">
-            Now playing
-          </span>
-        </div>
-      )}
-
-      {/* Lightbox case — hangs slightly crooked, straightens on approach */}
-      <div
-        className={`relative rounded-xl border bg-neutral-900 p-2 shadow-[0_25px_50px_-20px_rgba(0,0,0,0.9)] transition-all duration-500 ease-out hover:rotate-0 hover:-translate-y-1.5 ${feature.tilt} ${
-          feature.nowPlaying
-            ? "border-amber-400/40 shadow-[0_0_45px_-10px_rgba(245,158,11,0.35)]"
-            : "border-white/15 hover:border-white/30"
+      {/* Focus state lives in CSS classes (not framer) so the blur eases with
+          a plain transition and hover can pre-focus a soft card */}
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-pressed={selected}
+        className={`relative flex h-full w-full flex-col rounded-xl border p-4 text-left outline-none transition-all duration-500 ease-out focus-visible:ring-2 focus-visible:ring-amber-400/70 md:p-5 ${
+          selected
+            ? "border-amber-400/50 bg-[#141210] shadow-[0_0_35px_-12px_rgba(245,158,11,0.3)]"
+            : "scale-[0.98] border-white/10 bg-[#0f0f0e] opacity-50 blur-[3px] hover:opacity-75 hover:blur-[1.5px]"
         }`}
       >
-        {/* Case bolts */}
-        {["left-1 top-1", "right-1 top-1", "left-1 bottom-1", "right-1 bottom-1"].map((pos) => (
+        {/* AF-confirm corner brackets, like the hero's viewfinder */}
+        {[
+          "left-1.5 top-1.5 border-l-2 border-t-2",
+          "right-1.5 top-1.5 border-r-2 border-t-2",
+          "bottom-1.5 left-1.5 border-b-2 border-l-2",
+          "bottom-1.5 right-1.5 border-b-2 border-r-2",
+        ].map((pos) => (
           <span
             key={pos}
             aria-hidden
-            className={`absolute h-1 w-1 rounded-full bg-white/25 shadow-[inset_0_1px_1px_rgba(0,0,0,0.9)] ${pos}`}
+            className={`absolute h-3 w-3 border-emerald-400/80 transition-opacity duration-500 ${pos} ${
+              selected ? "opacity-100" : "opacity-0"
+            }`}
           />
         ))}
 
-        {/* The one-sheet */}
-        <div className="relative aspect-2/3 overflow-hidden rounded-md bg-black">
-          <PosterArt id={feature.id} />
-
-          {/* Scrim so the type always reads */}
-          <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/15 to-black/45" />
-
-          {/* Light sweep across the glass on hover */}
-          <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="light-leak absolute -inset-y-1/4 w-1/2 bg-linear-to-r from-transparent via-amber-100/20 to-transparent" />
-          </div>
-
-          <div className="absolute inset-0 flex flex-col items-center px-4 pb-3.5 pt-4 text-center">
-            {/* Festival laurels */}
-            <div className="flex items-center gap-1.5">
-              <Laurel />
-              <p className="max-w-28 font-mono text-[7px] font-bold uppercase leading-relaxed tracking-[0.2em] text-amber-100/80">
-                Official selection
-                <br />
-                <span className="text-amber-300/90">{feature.festival}</span>
-              </p>
-              <Laurel flip />
-            </div>
-
-            <div className="flex-1" aria-hidden />
-
-            <p className="font-mono text-[8px] font-bold uppercase tracking-[0.35em] text-white/50">
-              {feature.genre}
-            </p>
-            <h3 className="mt-1.5 font-heading text-[22px] font-black leading-[0.95] tracking-tight text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-              {feature.title.map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
-              ))}
-            </h3>
-            <p className="mt-2 text-[11px] italic leading-snug text-amber-200/90">
-              {feature.tagline}
-            </p>
-
-            {/* Billing block — the squashed micro-credits every one-sheet has */}
-            <p className="mt-3 w-full scale-y-[1.6] px-1 text-[5px] font-semibold uppercase leading-[1.7] tracking-[0.08em] text-white/40">
-              {feature.credits}
-            </p>
-
-            <div className="mt-2.5 flex w-full items-center justify-between">
-              <span className="border border-white/40 px-1.5 py-0.5 font-mono text-[7px] font-bold tracking-[0.15em] text-white/80">
-                {feature.year}
-              </span>
-              <span className="font-mono text-[7px] font-bold tracking-[0.3em] text-white/40">
-                MGS·FILMS
-              </span>
-            </div>
-          </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="font-mono text-[9px] font-bold tracking-[0.25em] text-amber-400/80">
+            ▸ {chapter.m} m
+          </span>
+          <span
+            className={`flex items-center gap-1.5 font-mono text-[8px] font-bold tracking-[0.2em] text-emerald-400 transition-opacity duration-500 ${
+              selected ? "opacity-100" : "opacity-0"
+            }`}
+            aria-hidden={!selected}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]" />
+            AF
+          </span>
         </div>
 
-        {/* Plaque under the glass — what the chapter actually was */}
-        <div className="mt-2 rounded-md border border-white/10 bg-black/40 px-3 py-2.5 text-left">
-          <p className="text-[11px] leading-relaxed text-gray-400">{feature.synopsis}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {feature.roles.map((role) => (
-              <span
-                key={role}
-                className="rounded-full border border-amber-500/20 bg-amber-500/10 px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.15em] text-amber-300/90"
-              >
-                {role}
-              </span>
-            ))}
-          </div>
+        <h3 className="mt-3 font-heading text-xl font-black tracking-tight text-white md:text-2xl">
+          {chapter.title}
+        </h3>
+        <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.25em] text-white/40">
+          {chapter.years}
+        </p>
+
+        <p className="mt-3.5 flex-1 text-[11px] leading-relaxed text-gray-400 md:text-xs">
+          {chapter.description}
+        </p>
+
+        <div className="mt-4 flex flex-wrap gap-x-3 gap-y-1">
+          {chapter.details.map((d) => (
+            <span
+              key={d}
+              className="font-mono text-[8px] uppercase tracking-[0.2em] text-white/35"
+            >
+              {d}
+            </span>
+          ))}
         </div>
-      </div>
-    </motion.article>
+      </button>
+    </motion.div>
   );
 }
 
 export default function Experience({ hideTitle = false }: { hideTitle?: boolean }) {
+  // Land focused at infinity — the current chapter; clicking back through
+  // the years pulls focus closer.
+  const [selected, setSelected] = useState(chapters.length - 1);
+  const chapter = chapters[selected];
+
   return (
     <section id="experience" className="w-full flex flex-col items-start z-10 relative">
       <motion.div
@@ -325,45 +292,78 @@ export default function Experience({ hideTitle = false }: { hideTitle?: boolean 
         </p>
       </motion.div>
 
-      {/* The poster wall */}
-      <div className="grid w-full grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
-        {features.map((feature, index) => (
-          <Poster key={feature.id} feature={feature} index={index} />
-        ))}
-      </div>
-
-      {/* Ticket stub — the career stats, torn at the door */}
+      {/* The lens barrel */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="relative mx-auto mt-12 flex items-stretch"
+        viewport={{ once: true, margin: "0px 0px -10% 0px" }}
+        transition={{ duration: 0.7 }}
+        className="w-full overflow-hidden rounded-2xl border border-white/10 bg-neutral-950 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.8)]"
       >
-        <div className="flex items-center overflow-hidden rounded-lg border border-amber-400/30 bg-amber-500/[0.06]">
-          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 px-5 py-3">
-            {stats.map((stat) => (
-              <span
-                key={stat}
-                className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-amber-200/90 md:text-[10px]"
-              >
-                {stat}
-              </span>
-            ))}
-          </div>
-          {/* Perforation + stub */}
-          <div className="relative flex items-center self-stretch border-l border-dashed border-amber-400/40 px-3">
-            <span className="font-mono text-[8px] font-black uppercase tracking-[0.25em] text-amber-300 md:text-[9px]">
-              Admit one
-            </span>
-          </div>
+        {/* Nameplate — model years double as the focal range */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-white/10 bg-white/[0.03] px-4 py-2.5 md:px-5">
+          <p className="font-mono text-[10px] tracking-wide text-gray-400 md:text-xs">
+            MG PRIME 19–26mm <span className="text-gray-600">·</span> f/1.8{" "}
+            <span className="text-gray-600">·</span> MF
+          </p>
+          <p className="ml-auto font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-amber-300 md:text-[10px]">
+            focus {chapter.m} m · {chapter.years}
+          </p>
         </div>
-        <p
+
+        <FocusRing selected={selected} onSelect={setSelected} />
+
+        {/* Depth-of-field scale flanking the index */}
+        <div
+          className="flex items-center justify-center gap-2.5 py-1.5 font-mono text-[8px] font-bold tracking-widest text-white/25"
           aria-hidden
-          className="pointer-events-none absolute -right-6 -top-6 rotate-6 font-scribble text-xl text-amber-400/80 md:-right-16 md:text-2xl"
         >
-          sequel in production…
+          <span>16</span>
+          <span>8</span>
+          <span>4</span>
+          <span>2</span>
+          <span className="text-amber-400/80">▲</span>
+          <span>2</span>
+          <span>4</span>
+          <span>8</span>
+          <span>16</span>
+        </div>
+
+        {/* The chapters — one sharp, the rest optically out of focus */}
+        <div className="grid grid-cols-1 gap-4 px-4 pb-4 pt-2 sm:grid-cols-2 md:px-5 md:pb-5 lg:grid-cols-4">
+          {chapters.map((c, i) => (
+            <ChapterCard
+              key={c.id}
+              chapter={c}
+              index={i}
+              selected={selected === i}
+              onSelect={() => setSelected(i)}
+            />
+          ))}
+        </div>
+
+        <p className="px-4 pb-3 text-right font-mono text-[8px] uppercase tracking-[0.25em] text-gray-700 md:px-5 md:text-[9px]">
+          manual focus · click a chapter to pull it sharp
         </p>
+
+        {/* Barrel base — engraved stats + the nudge toward booking */}
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/10 px-4 py-3.5 md:px-5">
+          <p className="font-mono text-[8px] font-bold uppercase tracking-[0.25em] text-white/35 md:text-[9px]">
+            {stats.join("  ·  ")}
+          </p>
+          <a
+            href="#contact"
+            className="group inline-flex items-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-amber-400 transition-colors duration-300 hover:text-amber-300 md:text-[10px]"
+          >
+            pull focus on the next chapter
+            <span
+              aria-hidden
+              className="inline-block transition-transform duration-300 group-hover:translate-x-1"
+            >
+              →
+            </span>
+          </a>
+        </div>
       </motion.div>
     </section>
   );

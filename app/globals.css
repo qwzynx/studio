@@ -10,8 +10,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), sans-serif;
   --font-heading: var(--font-inter-tight), sans-serif;
-  /* Handwritten accents (Experience ticket-stub note) */
-  --font-scribble: var(--font-caveat), cursive;
 }
 
 .dark {
